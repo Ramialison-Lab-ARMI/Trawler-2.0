@@ -158,7 +158,6 @@ foreach my $idmotif ( keys %FEATURES ){
     foreach my $loc ( keys $FEATURES{$idmotif} ){
         foreach my $mot (keys  $FEATURES{$idmotif}{$loc} ){
             my ($chr, $start, $end, $strand) = split ('_', $loc);
-            print $loc."\n";
             my $length = $end - $start;
             my $id = $chr."_".$start."_".$end;
 
