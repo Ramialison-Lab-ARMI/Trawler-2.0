@@ -69,6 +69,7 @@ my $tmp_dir_name = fileparse($directory);
 # default result directory is like $TRAWLER_HOME/tmp_YYYY-MM-DD_HHhmm:ss/result
 my $tmp_result_dir = File::Spec->catdir( $directory, $tcst{RES_DIR_NAME} );
 my $tmp_fasta_dir = File::Spec->catdir( $tmp_result_dir, $tcst{FASTA_DIR_NAME} );
+my $tmp_bed_dir = File::Spec->catdir( $tmp_result_dir, $tcst{BED_DIR_NAME});
 my $tmp_features_dir = File::Spec->catdir( $tmp_result_dir, $tcst{FEATURES_DIR_NAME} );
 my $phastcon_dir = File::Spec->catdir($tcst{GENOME}, $org, $tcst{PHSTCON_DIR_NAME});
 
@@ -158,6 +159,7 @@ foreach my $idmotif ( keys %FEATURES ){
     foreach my $loc ( keys $FEATURES{$idmotif} ){
         foreach my $mot (keys  $FEATURES{$idmotif}{$loc} ){
             my ($chr, $start, $end, $strand) = split ('_', $loc);
+
             my $length = $end - $start;
             my $id = $chr."_".$start."_".$end;
 
@@ -232,7 +234,7 @@ sub get_conservation{
     opendir (DIR, $input_dir) or die "cannot read directory $phastcon_dir\n\n";
     
     while (my $file = readdir(DIR)){
-        next if ($file !~ /(^chr)*(.bw$)/);
+        next if ($file !~ /.bw$/);
         my @file_array = split(/\./, $file);
         $phastcon_files{$file_array[0]}=$file;
     }
@@ -241,7 +243,7 @@ sub get_conservation{
     #=========================================================
     
     #create temp file
-    my $temp_output = create_tmp_file( 'temp_output_XXXX', $tmp_result_dir, '.bed');
+    my $temp_output = create_tmp_file( 'temp_output_XXXX', $tmp_bed_dir, '.bed');
     
     #sort motif bed into hash based on chromosome
     open(FHM, $motif_bed_in) or die;
@@ -258,40 +260,74 @@ sub get_conservation{
     #=========================================================
     open (FHO, '>', $phastcon_output) or die; #final output
 
-    foreach my $chr ( sort keys %avgInput ){ #create bed file and generate phastcon based on chr
+    if ( my $chr = keys %phastcon_files == 1 ){#if phastcon file saved as single file
         
-        my $temp_input = create_tmp_file( $chr.'_XXXX', $tmp_result_dir, '.bed');
+        my $temp_input = create_tmp_file( 'temp_input_XXXX', $tmp_bed_dir, '.bed');
+        
         open (TEMP, '>', $temp_input) or die;
-        foreach my $region ( keys %{ $avgInput{$chr} } ){
-            
-            print TEMP $chr."\t".$avgInput{$chr}{$region}."\n";#need 4th column as name
-            
-        }
-        close TEMP;
-        if ($phastcon_files{$chr}){
-            print "extracting phastcon scores for $chr\n";
-            system("$tcst{BW_AVG} -minMax ".$input_dir."/".$phastcon_files{$chr}." ".$temp_input." ".$temp_output);
-            
-            #process output file from bigWigAverageOverBed
-            open (FHI, $temp_output) or die "could not open $temp_output";
-            while (my $line = <FHI>) {
-                chomp $line; #remove the end 'new line' symbol
-                my @t=split('\s+',$line); #splits the line into separate strings
-                my ($chr, $start, $end) = split('\_', $t[0]);
-                if ((scalar(@t) < 8) || ($t[2] == 0)){
-                    $max_temp_output = "NA";
-                    $mean_temp_output = "NA";
-                } else {
-                    $max_temp_output = $t[7];
-                    $mean_temp_output = $t[5];
-                }
+        while ( my ($chr, $value) = each %avgInput ){
+            while ( my ($region) = each $avgInput{$chr} ){
 
-                print FHO "$chr\t$start\t$end\t$mean_temp_output\t$max_temp_output\n";
+                print TEMP $chr."\t".$avgInput{$chr}{$region}."\n";#need 4th column as name
+                
             }
         }
-        close(FHI);
-    }
+
+        print "extracting phastcon scores\n";
+        system("$tcst{BW_AVG} -minMax ".$input_dir."/".$phastcon_files{sacCer3}." ".$temp_input." ".$temp_output);
+
+        #process output file from bigWigAverageOverBed
+        open (FHI, $temp_output) or die "could not open $temp_output";
+        while (my $line = <FHI>) {
+            chomp $line; #remove the end 'new line' symbol
+            my @t=split('\s+',$line); #splits the line into separate strings
+            my ($chr, $start, $end) = split('\_', $t[0]);
+            if ((scalar(@t) < 8) || ($t[2] == 0)){
+                $max_temp_output = "NA";
+                $mean_temp_output = "NA";
+            } else {
+                $max_temp_output = $t[7];
+                $mean_temp_output = $t[5];
+            }
+            
+            print FHO "$chr\t$start\t$end\t$mean_temp_output\t$max_temp_output\n";
+        }
+    }else{#for phastcon files separated into files by chromosome
     
+        foreach my $chr ( sort keys %avgInput ){ #create bed file and generate phastcon based on chr
+            
+            my $temp_input = create_tmp_file( $chr.'_XXXX', $tmp_bed_dir, '.bed');
+            open (TEMP, '>', $temp_input) or die;
+            foreach my $region ( keys %{ $avgInput{$chr} } ){
+                
+                print TEMP $chr."\t".$avgInput{$chr}{$region}."\n";#need 4th column as name
+                
+            }
+            close TEMP;
+            if ($phastcon_files{$chr}){
+                print "extracting phastcon scores for $chr\n";
+                system("$tcst{BW_AVG} -minMax ".$input_dir."/".$phastcon_files{$chr}." ".$temp_input." ".$temp_output);
+                
+                #process output file from bigWigAverageOverBed
+                open (FHI, $temp_output) or die "could not open $temp_output";
+                while (my $line = <FHI>) {
+                    chomp $line; #remove the end 'new line' symbol
+                    my @t=split('\s+',$line); #splits the line into separate strings
+                    my ($chr, $start, $end) = split('\_', $t[0]);
+                    if ((scalar(@t) < 8) || ($t[2] == 0)){
+                        $max_temp_output = "NA";
+                        $mean_temp_output = "NA";
+                    } else {
+                        $max_temp_output = $t[7];
+                        $mean_temp_output = $t[5];
+                    }
+                    
+                    print FHO "$chr\t$start\t$end\t$mean_temp_output\t$max_temp_output\n";
+                }
+            }
+            close(FHI);
+        }
+    }
     close(FHO);
     return $phastcon_output;
 }
