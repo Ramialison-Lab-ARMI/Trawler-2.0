@@ -105,13 +105,11 @@ foreach my $id (keys %$id2sequences) {
     my @loc_array = split(/\-/, $id);
     open(OUT, ">$file") or croak "Cannot open file $file: $!";
     my $ref_seq = $$id2sequences{$id};
-#    my $length_seq = length($ref_seq);
     print OUT ">$id\n$ref_seq\n";
     foreach my $idmotif (keys %$id2motif) {
         my @motifs = @{$$id2motif{$idmotif}};
         
         foreach my $motif (@motifs) {
-            #[YH:remove] get_stat_motif($ref_seq, $motif, $id, $idmotif);
             my ($mot, $mstarts, $mends, $strands) = get_motif_loc($ref_seq, $motif);
             if ($mot) {
                 my $size_mot = @$mot;
@@ -124,15 +122,10 @@ foreach my $id (keys %$id2sequences) {
                     #get bed for motifs
                     my $b_start = $loc_array[1] + $m_start;
                     my $b_end = $b_start + $length_seq;
-                    my $loci = $loc_array[0]."\t".$b_start."\t".$b_end."\t".$motif;
+                    my $loci = $loc_array[0]."\t".$b_start."\t".$b_end."\t".$motif."\t".$m_strand;
                     print FHT $loci."\n";
                     
-                    my $line_feature = "motif\t".$id."\t1\t".$b_start."\t".$b_end."\tmotif\n";
-
-#                    print $b_start."\t".$m_start."\n";
-                    
-#                    my $id = $loc_array[0]."-".$b_start."-".$b_end;
-                    my $id = $loc_array[0]."-".$b_start."-".$b_end;
+                    my $id = $loc_array[0]."_".$b_start."_".$b_end."_".$m_strand;
                     push @{$FEATURES{$idmotif}->{$id}->{$motif}->{"start"}}, $b_start;
                     push @{$FEATURES{$idmotif}->{$id}->{$motif}->{"end"}}, $b_end;
                     
@@ -140,14 +133,11 @@ foreach my $id (keys %$id2sequences) {
             }
         }
     }
-#    close(MOTIF_BED);
     close(OUT) or croak "Can't close file '$file': $!";
 }
 
 system ("sort -k1,1 -k2,2n $temp_motif_bed |uniq -f1 > $sorted_motifs");
 
-
-#### move this outside of loop to somewhere after complete bed file is generated ####
 $phastcon_scores = get_conservation( $sorted_motifs, $directory, $phastcon_dir, $phastcon_scores );
 
 open (PHSTCN_SC, $phastcon_scores) or die;
@@ -155,7 +145,7 @@ open (PHSTCN_SC, $phastcon_scores) or die;
 while (my $line = <PHSTCN_SC>){
     chomp ($line);
     my ($chr, $start, $end, $avg, $max) = split(/\t/, $line);
-    $SCORES{$chr."-".$start."-".$end}=$avg."\t".$max;
+    $SCORES{$chr."_".$start."_".$end}=$avg."\t".$max;
 }
 ####
 
@@ -167,14 +157,15 @@ print STAT_FILE "#id\tmotif_id\tmotif\tstart\taverage_conservation\tmax_conserva
 foreach my $idmotif ( keys %FEATURES ){
     foreach my $loc ( keys $FEATURES{$idmotif} ){
         foreach my $mot (keys  $FEATURES{$idmotif}{$loc} ){
-            my ($chr, $start, $end, $motif) = split (/\-/, $loc);
+            my ($chr, $start, $end, $strand) = split ('_', $loc);
+            print $loc."\n";
             my $length = $end - $start;
-#            my $id = $chr."-".$start."-".$end;
-            ####23/6/15 how to implement strand into STAT file??????
-            if ($SCORES{$loc}){
-                print STAT_FILE $loc."\t".$idmotif."\t".$mot."\t".$start."\t".$SCORES{$loc}."\t".$length."\t1\t".$end."\n";
-            }else{
-                print STAT_FILE $loc."\t".$idmotif."\t".$mot."\t".$start."\t0\t0\t".$length."\t1\t".$end."\n";
+            my $id = $chr."_".$start."_".$end;
+
+            if ($SCORES{$id}){
+                print STAT_FILE $id."\t".$idmotif."\t".$mot."\t".$start."\t".$SCORES{$id}."\t".$length."\t".$strand."\t".$end."\n";
+            }else{#if phastcon score not available for bed region
+                print STAT_FILE $loc."\t".$idmotif."\t".$mot."\t".$start."\t0\t0\t".$length."\t".$strand."\t".$end."\n";
             }
         }
     }
@@ -211,11 +202,9 @@ foreach my $file1 (keys %FEATURES) {
                         my $e = $ends[$i];
                         
                         if($id eq $file2 && $feature ne $file1) {
-#                            print  "$feature\t$org\t1\t$s\t$e\tmotif\n";
                             print FEATURE "$feature\t$id\t1\t$s\t$e\tmotif\n";
                         }
                         elsif ($feature eq $file1 && $id eq $file2) {#same family therefore same color
-#                            print  "$motif\t$org\t1\t$s\t$e\t$file1\n";
                             print FEATURE "$motif\t$id\t1\t$s\t$e\t$file1\n";
                         }
                     }
@@ -261,8 +250,8 @@ sub get_conservation{
     my $counter = 0;
     while (my $line = <FHM>){
         chomp($line);
-        my($chr, $start, $end, $motif) = split (/\t/, $line);
-        $avgInput{$chr}{$chr."_".$counter} = $start."\t".$end."\t".$chr."_".$start."_".$end."_".$motif;
+        my($chr, $start, $end, $motif, $strand) = split (/\t/, $line);
+        $avgInput{$chr}{$chr."_".$counter} = $start."\t".$end."\t".$chr."_".$start."_".$end."_".$motif."_".$strand;
         $counter++;
     }
     
@@ -270,7 +259,7 @@ sub get_conservation{
     #=========================================================
     open (FHO, '>', $phastcon_output) or die; #final output
 
-    foreach my $chr ( sort keys %avgInput ){ #create bed file and generate phstcon based on chr
+    foreach my $chr ( sort keys %avgInput ){ #create bed file and generate phastcon based on chr
         
         my $temp_input = create_tmp_file( $chr.'_XXXX', $tmp_result_dir, '.bed');
         open (TEMP, '>', $temp_input) or die;
@@ -297,8 +286,7 @@ sub get_conservation{
                     $max_temp_output = $t[7];
                     $mean_temp_output = $t[5];
                 }
-                #        print $max_temp_output."\n";
-                #        print $mean_temp_output."\n";
+
                 print FHO "$chr\t$start\t$end\t$mean_temp_output\t$max_temp_output\n";
             }
         }else{
@@ -309,24 +297,6 @@ sub get_conservation{
         close(FHI);
     }
     
-    ####8/6/15 figure out how to process file from bigWigAverageOverBed. need to get regions from %avgInput and add conservation score to end of regions which have score obtained.
-    ####22/6/2015 moved this part inside the output generation and works to print all chrs into output file
-#    #process output file from bigWigAverageOverBed
-#    open (FHI, $temp_output) or die "could not open $temp_output";
-#    while (my $line = <FHI>) {
-#        chomp $line; #remove the end 'new line' symbol
-#        my @t=split('\s+',$line); #splits the line into separate strings
-#        my ($chr, $start, $end) = split('\_', $t[0]);
-#        if ((scalar(@t) < 8) || ($t[2] == 0)){
-#            $max_temp_output = "NA";
-#            $mean_temp_output = "NA";
-#        } else {
-#            $max_temp_output = $t[7];
-#            $mean_temp_output = $t[5];
-#        }
-#        #        print $max_temp_output."\n";
-#        #        print $mean_temp_output."\n";
-#        print FHO "$chr\t$start\t$end\t$mean_temp_output\t$max_temp_output\n";
     close(FHO);
     return $phastcon_output;
 }
