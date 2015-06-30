@@ -288,11 +288,7 @@ sub get_conservation{
 
                 print FHO "$chr\t$start\t$end\t$mean_temp_output\t$max_temp_output\n";
             }
-        }else{
-            foreach my $region (keys %{ $avgInput{$chr} }){
-                print FHO $avgInput{$chr}{$region}."\n";
-            }
-       }
+        }
         close(FHI);
     }
     
