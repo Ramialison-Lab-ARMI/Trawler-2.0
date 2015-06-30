@@ -235,6 +235,7 @@ if ($dir_id) {
 # default procesing results directory is like $TRAWLER_HOME/tmp_YYYY-MM-DD_HHhmm:ss/result
 my $tmp_result_dir = File::Spec->catdir( $directory, $tcst{RES_DIR_NAME} );
 my $tmp_fasta_dir = File::Spec->catdir( $tmp_result_dir, $tcst{FASTA_DIR_NAME} );
+my $tmp_bed_dir = File::Spec->catdir( $tmp_result_dir, $tcst{BED_DIR_NAME});
 my $tmp_features_dir = File::Spec->catdir( $tmp_result_dir, $tcst{FEATURES_DIR_NAME} );
 
 my $input_file = create_output_arch();
@@ -255,8 +256,8 @@ if ($sample && $org){
     $tcst{RAND_BG} = File::Spec->catdir($html_download_dir, "rand_bg.fa");
     $tcst{SAMPLE_FILE} = File::Spec->catdir($html_download_dir, "sample.fa");
     
-    my $tmp_sample = File::Spec->catfile( $tmp_fasta_dir, $tcst{TMP_SAMPLE_NAME} . $tcst{FASTA_FILE_EXT} );
-    my $tmp_bg = File::Spec->catfile( $tmp_fasta_dir, $tcst{TMP_BG_NAME} . $tcst{FASTA_FILE_EXT} );
+    my $tmp_sample = File::Spec->catfile( $tmp_bed_dir, $tcst{TMP_SAMPLE_NAME} . $tcst{BED_FILE_EXT} );
+    my $tmp_bg = File::Spec->catfile( $tmp_bed_dir, $tcst{TMP_BG_NAME} . $tcst{BED_FILE_EXT} );
     
     ###generate fasta from bed and random background data
     system("sort -k1,1 -k2,2n ".$sample." | bedtools merge > ".$tmp_sample);
@@ -481,7 +482,7 @@ sub create_output_arch {
 
   # FIXME[YH]: create full directory result structure here !
   # create Trawler results directories (result fasta features)
-  eval { mkpath([$tmp_result_dir, $tmp_fasta_dir, $tmp_features_dir]) };
+  eval { mkpath([$tmp_result_dir, $tmp_fasta_dir, $tmp_bed_dir, $tmp_features_dir]) };
   if ($@) {
     print STDERR "Cannot create $tmp_result_dir: $@";
     exit(1);

@@ -181,6 +181,7 @@ sub _read_config {
         RES_DIR_PREFIX    => "tmp_",
         RES_DIR_NAME      => "result",
         FASTA_DIR_NAME    => "fasta",
+        BED_DIR_NAME      => "bed",
         FEATURES_DIR_NAME => "features",
         INPUT_DIR_NAME    => "input",
         CHR_DIR_NAME      => "chr",
@@ -207,7 +208,7 @@ sub _read_config {
         COMPARE_FILE_EXT       => "_compare",
         PWM_FILE_EXT           => ".pwm",
         FASTA_FILE_EXT         => ".fasta",
-        BG_FASTA_EXT           => ".rand_bg",
+        BED_FILE_EXT           => ".bed",
         SAMPLE_FASTA_EXT       => ".sample",
     
         MOTIF_BED        => "motifs.bed",
