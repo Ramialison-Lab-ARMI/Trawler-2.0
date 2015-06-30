@@ -1,0 +1,12 @@
+/conf
+/examples
+/genome_data
+/images
+/jsscripts
+/lib
+/META-INF
+/myResults
+/treg_comparator
+/weblogo
+*.sh
+.DS_Store
