@@ -135,13 +135,19 @@ sub _read_config {
     unless($res_path) {
         $res_path = File::Spec->catdir( $base_path, RESULTS_DIR );
     }
+    
+    #directory for genome files
+    my $genome_path = $config->getProperty('user.genomepath');
+    unless ($genome_path) {
+        $genome_path = File::Spec->catfile( $base_path, GENOME);
+    }
 
     ### put constants in this hash
     %tcst = (
         # Paths
         BASE_PATH => $base_path,
         RES_PATH  => $res_path,
-        GENOME    => File::Spec->catfile( $base_path, GENOME),
+        GENOME    => $genome_path,
 
         # Log level
         DEBUG => $config->getProperty('logger.debug'), # 0:disabled 1:enabled

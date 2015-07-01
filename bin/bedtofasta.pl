@@ -55,7 +55,7 @@ print "Converting $name[$#name] to fasta format\n";
 #open output file to be written
 open (OUTPUT, '>', $output) or die "could not open output file $output"; #opens file to be written
 
-opendir (CHR, $dir) or die "can not open chromosome directory type '-help' for usage\n";
+opendir (CHR, $dir) or die "cannot open chromosome directory $dir type '-help' for usage\n";
 
 ###load chromosomes into hash
 while (my $chromefile = readdir(CHR)){

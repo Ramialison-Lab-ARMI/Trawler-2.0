@@ -9,6 +9,7 @@
 use List::Util qw(sum);
 use strict;
 use Getopt::Long;
+use File::Spec::Functions qw[catfile catdir];
 
 if (@ARGV<2) {
     die "argument requred"
@@ -20,6 +21,12 @@ use lib "$FindBin::RealBin/../modules";
 my $script_name = $FindBin::RealScript;
 print "\n## Running $script_name\n";
 
+use Trawler::Constants 1.0 qw( _read_config _tcst);
+
+# Read config file
+_read_config($FindBin::RealBin);
+my %tcst = _tcst();
+
 #####################
 #load the parameters#
 #####################
@@ -27,13 +34,14 @@ my $bedfile = $ARGV[0];
 my @name = split ('/', $ARGV[0]);
 my $output = $name[$#name]."_rand_bg.bed";
 my $org = $ARGV[1];
+my $dir = File::Spec->catdir( $tcst{GENOME}, $org);
 
 GetOptions('output:s' => \$output);
 
 ###################################
 #load chromosome lengths from file#
 ###################################
-my $length_file = "./genome_data/".$org."/".$org.".chrom.sizes.txt";
+my $length_file = $dir."/".$org.".chrom.sizes.txt";
 
 open (my $length_fh, $length_file) or die "could not open $length_file";
 
@@ -52,9 +60,9 @@ close $length_fh;
 ######################
 
 my %EnsEMBLIDs;
-my $totalGenes=0;
+my $totalGenes = 0;
 my %gene;
-my $ensgFile="./genome_data/".$org."/".$org."_genes.txt";
+my $ensgFile = $dir."/".$org."_genes.txt";
 open (FIN, $ensgFile) || die "Can not open input file";#opens input file
 while (my $line=<FIN>) {#####Ensembl Gene ID	Associated Gene Name	Chromosome Name	Gene Start (bp)	Gene End (bp)	Strand
     next if $line =~ /^Ensembl/;
