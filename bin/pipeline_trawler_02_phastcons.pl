@@ -273,8 +273,8 @@ sub get_conservation{
             }
         }
 
-        print "extracting phastcon scores\n";
-        system("$tcst{BW_AVG} -minMax ".$input_dir."/".$phastcon_files{sacCer3}." ".$temp_input." ".$temp_output);
+        print "extracting phastcon scores for ".$phastcon_files{$org}."\n";
+        system("$tcst{BW_AVG} -minMax ".$input_dir."/".$phastcon_files{$org}." ".$temp_input." ".$temp_output);
 
         #process output file from bigWigAverageOverBed
         open (FHI, $temp_output) or die "could not open $temp_output";
