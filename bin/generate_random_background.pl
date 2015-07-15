@@ -184,7 +184,7 @@ for (my $i=0;$i<10;$i++){#####how many times you want the background to be bigge
             my $randPos=int(rand($range))+$minInt;
             my $random_gene_upstream=int(rand($totalGenes));
             my $interval_upstream=getInterval($random_gene_upstream,$randPos,$orientation,$mean_length);
-            print OUTPUT $interval_upstream."\n";
+            print OUTPUT $interval_upstream."\n" if ($interval_upstream);
         }
     }
 }
@@ -235,7 +235,7 @@ sub getInterval{
     my $intervalsize=$bed_end-$bed_start;
 #     print $intervalsize."\t";
     my $bed_interval=$chr."\t".$bed_start."\t".$bed_end;
-    return $bed_interval;
+    return $bed_interval if ($bed_start and $bed_end);
 }
 
 ###sub routine to calculate average length of bed regions

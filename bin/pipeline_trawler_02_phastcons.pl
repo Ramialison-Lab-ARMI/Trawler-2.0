@@ -35,11 +35,11 @@ _read_config($FindBin::RealBin);
 my %tcst = _tcst();
 
 GetOptions(
-'motif:s'     => \$file_motif,
-'sequences:s' => \$file_sequences,
-'directory=s' => \$directory,
-'help:s'      => \$help,
-'org=s'       => \$org,
+	'motif:s'     => \$file_motif,
+	'sequences:s' => \$file_sequences,
+	'directory=s' => \$directory,
+	'help:s'      => \$help,
+	'org=s'       => \$org,
 );
 
 my $counter = 0;
@@ -273,8 +273,8 @@ sub get_conservation{
             }
         }
 
-        print "extracting phastcon scores for ".$phastcon_files{$org}."\n";
-        system("$tcst{BW_AVG} -minMax ".$input_dir."/".$phastcon_files{$org}." ".$temp_input." ".$temp_output);
+        print "extracting phastcon scores for ".$phastcon_files{$org}." into ".$temp_output."\n";
+        system($tcst{BW_AVG}." -minMax ".$input_dir."/".$phastcon_files{$org}." ".$temp_input." ".$temp_output);
 
         #process output file from bigWigAverageOverBed
         open (FHI, $temp_output) or die "could not open $temp_output";
@@ -306,7 +306,7 @@ sub get_conservation{
             close TEMP;
             if ($phastcon_files{$chr}){
                 print "extracting phastcon scores for $chr\n";
-                system("$tcst{BW_AVG} -minMax ".$input_dir."/".$phastcon_files{$chr}." ".$temp_input." ".$temp_output);
+                system($tcst{BW_AVG}." -minMax ".$input_dir."/".$phastcon_files{$chr}." ".$temp_input." ".$temp_output);
                 
                 #process output file from bigWigAverageOverBed
                 open (FHI, $temp_output) or die "could not open $temp_output";
