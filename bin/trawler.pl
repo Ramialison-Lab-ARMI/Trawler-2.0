@@ -260,11 +260,19 @@ if ($sample && $org){
     my $tmp_bg = File::Spec->catfile( $tmp_bed_dir, $tcst{TMP_BG_NAME} . $tcst{BED_FILE_EXT} );
     
     ###generate fasta from bed and random background data
-    system("sort -k1,1 -k2,2n ".$sample." | bedtools merge > ".$tmp_sample);
-    system("perl ".$tcst{bedtofasta}." ".$tmp_sample." ".$org." -output ".$html_download_dir."/sample.fa");
-    system("perl ".$tcst{generate_background}." ".$tmp_sample." ".$org." -output ".$tmp_bg);
-    system("sort -k1,1 -k2,2n ".$tmp_bg." | bedtools merge > ".$html_download_dir."/rand_bg.bed");
-    system("perl ".$tcst{bedtofasta}." ".$html_download_dir."/rand_bg.bed ".$org." -output ".$html_download_dir."/rand_bg.fa");
+    my $pid = fork;
+    if (!defined $pid) {
+        die "Cannot fork: $!";
+    } elsif ($pid == 0) {
+        system("sort -k1,1 -k2,2n ".$sample." | bedtools merge > ".$tmp_sample);
+        system("perl ".$tcst{bedtofasta}." ".$tmp_sample." ".$org." -output ".$html_download_dir."/sample.fa");
+        exit 0;
+    } else {
+        system("perl ".$tcst{generate_background}." ".$tmp_sample." ".$org." -output ".$tmp_bg);
+        system("sort -k1,1 -k2,2n ".$tmp_bg." | bedtools merge > ".$html_download_dir."/rand_bg.bed");
+        system("perl ".$tcst{bedtofasta}." ".$html_download_dir."/rand_bg.bed ".$org." -output ".$html_download_dir."/rand_bg.fa");
+        waitpid $pid, 0;
+    }
     
     ###set files to run in trawler
     $background = $tcst{RAND_BG};
