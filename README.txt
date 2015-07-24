@@ -58,12 +58,12 @@ please see the INSTALL.txt file for detailed installation instructions.
 The following software packages are required:
 - Algorithm::Cluster (CPAN: http://search.cpan.org/~mdehoon/)
 - bedtools (http://bedtools.readthedocs.org/en/latest/content/installation.html)
+-kentUtils v305 (http://hgdownload.cse.ucsc.edu/admin/exe/userApps.v305.src.tgz)
 
 The following software packages are directly provided in the Trawler distribution:
 - treg_comparator (http://treg.molgen.mpg.de)
 - Jalview (http://www.jalview.org/)
 - WebLogo (http://weblogo.berkeley.edu/)
-- bigWigAverageOverBed from kentUtils (https://github.com/ENCODE-DCC/kentUtils)
 
 
 *********************************
@@ -136,7 +136,7 @@ this case, the self organizing map (SOM) will be use. [DEFAULT = NULL]
     -alignments (optional) file containing the list of files containing the aligned sequences (see README file for more info) [DEFAULT = NULL]
     -ref_species (optional) name of the reference species [DEFAULT = NULL]
     -clustering (optional) if 1 the program clusters the instances, if 0 no clustering. [DEFAULT = 1]
-    -phastcon (optional) requires phastcon scores as .bw file format saved under /genomes/[organism]/phastcon/ [DEFAULT = 0 ]
+    -phastcon (optional) value = 1 to display conservation. Requires PhastCon scores as .bw file format saved under /genomes/[organism]/phastcon/ [DEFAULT = 0 ].
     -web (optional) if 1 the output will be a web page with all the information [DEFAULT = 1]
 
 USAGE EXAMPLES
