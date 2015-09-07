@@ -70,8 +70,8 @@ while (my $line=<FIN>) {#####Ensembl Gene ID	Associated Gene Name	Chromosome Nam
     chomp $line;
     my @line_array = split ('\t', $line);
     ###$gene{chromosome}{ensembl-ID}="gene start    gene end    strand"
-#     $gene{$line_array[2]}{$line_array[0]}=$line_array[3]."\t".$line_array[4]."\t".$line_array[5];###bed input without chr
-    $gene{"chr".$line_array[2]}{$line_array[0]}=$line_array[3]."\t".$line_array[4]."\t".$line_array[5];###bed input with chr
+    if (length($line_array[2]) =~ /^\d|^[MYXIV]/) { $gene{'chr'.$line_array[2]}{$line_array[0]}=$line_array[3]."\t".$line_array[4]."\t".$line_array[5]; }###bed input with chr
+    else {$gene{$line_array[2]}{$line_array[0]}=$line_array[3]."\t".$line_array[4]."\t".$line_array[5];}###bed input without chr
     $EnsEMBLIDs{$totalGenes}=$line;
 #     print "test\n";
 }
@@ -100,6 +100,10 @@ while (my $loci = (<BED>)){
     ###set values to be used for comapring to gene loci
     my $distance = 300000000;###use large distance to start off search for smallest distance
     my @b = (split '\t',$loci);
+    my $chr;
+    if ( $b[0] =~ /^chr/ ){ $chr = $b[0] }
+    elsif ( $b[0] =~ /^\d|^[MYXIV]/ ){ $chr = 'chr'.$b[0]; }
+    else { $chr = $b[0]; }
     ###length array used for mean length
     $length_array[$counter]=$b[2]-$b[1];
 
@@ -158,6 +162,13 @@ my $run_time = $timer[1]-$timer[0];
 print "Distribution:\n";
 print "$_ $distribution{$_}\n" for ( sort {$a <=> $b} keys %distribution);
 
+if (sum(@length_array) > 20000000) {
+    my $size = sum(@length_array);
+    $factor = int(160000000/$size);
+    if ($factor < 5) {
+        die "sample is too big to generate background\n\n";
+    }
+}
 
 #####################
 #get random background
