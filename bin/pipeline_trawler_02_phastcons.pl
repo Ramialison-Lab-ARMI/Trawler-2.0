@@ -273,10 +273,8 @@ sub get_conservation{
             }
         }
 
-        my $phastcon_file;
-        foreach (keys %phastcon_files) { $phastcon_file = $phastcon_files{$_}; }
-        print "extracting phastcon scores from ".$phastcon_file."\n";
-        system($tcst{BW_AVG}." -minMax ".$input_dir."/".$phastcon_file." ".$temp_input." ".$temp_output);
+        print "extracting phastcon scores for ".$phastcon_files{$org}." into ".$temp_output."\n";
+        system($tcst{BW_AVG}." -minMax ".$input_dir."/".$phastcon_files{$org}." ".$temp_input." ".$temp_output);
 
         #process output file from bigWigAverageOverBed
         open (FHI, $temp_output) or die "could not open $temp_output";
