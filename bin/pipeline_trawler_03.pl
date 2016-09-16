@@ -27,7 +27,7 @@
 =head1 CONTACT
 
   EMBL 2008
-  Mirana Ramialison ramialis@embl.de
+  Mirana Ramialison mirana.ramialison@monash.edu
   Yannick Haudry haudry@embl.de
 
 =cut
@@ -68,11 +68,12 @@ use constant LINK_CSS_FILE => 'css/style.css';
 
 use constant LINK_TRAWLER => 'http://ani.embl.de/laurence/blog/';
 use constant LINK_TRAWLER_WEB => 'http://ani.embl.de/trawler/';
+use constant LINK_TRAWLER_GITHUB => 'https://github.com/Ramialison-Lab-ARMI/Trawler-2.0';
 
-use constant MAILTO_LAURENCE => 'mailto:ettwille@embl.de';
 use constant MAILTO_BENEDICT => 'mailto:benedict@soe.ucsc.edu';
-use constant MAILTO_MIRANA => 'mailto:ramialis@embl.de';
+use constant MAILTO_MIRANA => 'mailto:mirana.ramialison@monash.edu';
 use constant MAILTO_YANNICK => 'mailto:haudry@embl.de';
+use constant MAILTO_LOUIS => 'mailto:louis.dang@monash.edu';
 
 ###############################################################################
 
@@ -526,14 +527,15 @@ print FINDEX div( { id => 'h_links', class => 'help hide-first' },
                   a( { href => '#', class => 'delete' }, "Hide" ),
                   a( { href => LINK_TRAWLER, rel => 'external' }, "Trawler Home Page"), br(),
                   a( { href => LINK_TRAWLER_WEB, rel => 'external' }, "Trawler Web"), br(),
+                  a( { href => LINK_TRAWLER_GITHUB, rel => 'external' }, "Trawler standalone on GitHub"), br(),
                   );
 print FINDEX div( { id=>'h_contact', class=>'help hide-first' },
                   a( { href => '#', class=>'delete' }, "Hide"),
                   "Contacts: ", br(),
-                  a( { href => MAILTO_LAURENCE }, "Laurence Ettwiller"), br(),
                   a( { href => MAILTO_BENEDICT }, "Benedict Paten"), br(),
                   a( { href => MAILTO_MIRANA }, "Mirana Ramialison"), br(),
-                  a( { href => MAILTO_YANNICK }, "Yannick Haudry"), br()
+                  a( { href => MAILTO_YANNICK }, "Yannick Haudry"), br(),
+                  a( { href => MAILTO_LOUIS }, "Louis Dang", br()),
                 );
 print FINDEX div( { id=>'h_license', class => 'help hide-first' },
                   a( { href => $license_file_link,
