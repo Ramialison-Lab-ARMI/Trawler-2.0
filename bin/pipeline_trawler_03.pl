@@ -639,7 +639,7 @@ my $fam_txt = 'Motif family';
 my $pwm_txt = 'Position Weight Matrix';
 my $hit_txt = 'JASPAR (Mathelier et al., 2014), UniPROBE (Hume et al., 2015)';
 my $zsc_txt = 'Over-representation score of this motif compared to its background occurrence';
-my $csc_txt = 'Number of species where the motif is conserved';
+my $csc_txt = 'Conservation score of consensus sequence from PhastCon scores';
 # print THEAD
 my $main_tab_table_thead;
 if ($conservation) {
