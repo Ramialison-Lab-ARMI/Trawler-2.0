@@ -318,21 +318,28 @@ foreach my $family(keys %families) {
     }
     # tbody TF db
     if ($compare{$hits_num_comp}[0] eq $family) {
-        # Add TRANSFAC / JASPAR links
+        # Add HOCOMOCO / JASPAR links
         if ($compare{$hits_num_comp}[3] eq 'JASPAR') {
            my $id = $compare{$hits_num_comp}[4];
            $compare{$hits_num_comp}[3] = a( {
-            href => "http://jaspar.cgb.ki.se/cgi-bin/jaspar_db.pl?ID=".$id."&rm=present&db=0",
+            href => "http://jaspar.genereg.net/cgi-bin/jaspar_db.pl?ID=".$id."&rm=present&collection=CORE",
             title => "JASPAR:".$id,
             rel => "external" },
             'JASPAR' );
-        } elsif ($compare{$hits_num_comp}[3] eq 'TRANSFAC') {
+        } elsif ($compare{$hits_num_comp}[3] eq 'HOCOMOCO') {
             my $id = $compare{$hits_num_comp}[4];
             $compare{$hits_num_comp}[3] = a( {
-                href => "http://www.biobase.de/cgi-bin/biobase/transfac/8.4/bin/getTFProf.cgi?".$id,
-                title => "TRANSFAC:".$id,
+                href => "http://hocomoco.autosome.ru/motif/".$id,
+                title => "HOCOMOCO:".$id,
                 rel => "external" },
-                'TRANSFAC' );
+                'HOCOMOCO' );
+        } elsif ($compare{$hits_num_comp}[3] eq 'UniPROBE') {
+            my $id = $compare{$hits_num_comp}[4];
+            $compare{$hits_num_comp}[3] = a( {
+                href => "http://the_brain.bwh.harvard.edu/uniprobe/detailsDef.php?id=".$id,
+                title => "UniPROBE:".$id,
+                rel => "external" },
+            'UniPROBE' );
         }
         # Create table rows
       $compare_family_tbody .= Tr( td( [ @{$compare{$hits_num_comp}} ] ) );

@@ -230,19 +230,22 @@ foreach  my $query_id (keys %query_set_ids)  {
 					my $counter = 303;
 					my $x = $subject;
 					$x =~ s/^M(0){1,4}//;
-					if( $source{$subject} =~ "TRANSFAC" )  { $ref_str = "<a href=\"http://www.biobase.de/cgi-bin/biobase/transfac/8.4/bin/getTFProf.cgi\?$subject\">$subject</a>"; }
-					elsif( $source{$subject} =~ "PUBLIC" and $counter <= 302 )  { 
-						$ref_str = "<a href=\"http://www.cbil.upenn.edu/cgi-bin/tess/tess?request=MTX-DBRTRV-Accno&key=$subject\">$subject</a>"; 
-					}  elsif( $source{$subject} =~ "PUBLIC" and $counter > 302 )  { 
-						$ref_str = "<a href=http://www.gene-regulation.com/cgi-bin/pub/databases/transfac/getTF.cgi?AC=\"$subject\">$subject</a>"; 
-						#http://www.gene-regulation.com/cgi-bin/pub/databases/transfac/getTF.cgi?AC=M00001
-					}  elsif( $source{$subject} =~ "JASPAR" )  { $ref_str = "<a href=\"http://jaspar.cgb.ki.se/cgi-bin/jaspar_db.pl?ID=$subject&rm=present\">$subject</a>"; 
-					}  else  { 
-						if( defined $source{$subject} )   { print STDOUT  "source: ", $source{$subject}, "\n"  if $DEBUG; }
-						else  { print STDOUT  "NO source: ", $subject, "\n"  if $DEBUG; }
-						if( $source{$subject} ne "Query" )  { $source{$subject} = "--"; }
-						$ref_str = "-";
-					}
+                    if( $source{$subject} =~ "TRANSFAC" )  { $ref_str = "<a href=\"http://www.biobase.de/cgi-bin/biobase/transfac/8.4/bin/getTFProf.cgi\?$subject\">$subject</a>";
+                    } elsif( $source{$subject} =~ "PUBLIC" and $counter <= 302 )  {
+                        $ref_str = "<a href=\"http://www.cbil.upenn.edu/cgi-bin/tess/tess?request=MTX-DBRTRV-Accno&key=$subject\">$subject</a>";
+                    } elsif( $source{$subject} =~ "PUBLIC" and $counter > 302 )  {
+                        $ref_str = "<a href=http://www.gene-regulation.com/cgi-bin/pub/databases/transfac/getTF.cgi?AC=\"$subject\">$subject</a>";
+                    } elsif( $source{$subject} =~ "JASPAR" )  {
+                        $ref_str = "<a href=\"http://jaspar.cgb.ki.se/cgi-bin/jaspar_db.pl?ID=$subject&rm=present\">$subject</a>";
+                    } elsif( $source{$subject} =~ "UniPROBE" ) {
+                        $ref_str = "<a href=\"http://the_brain.bwh.harvard.edu/uniprobe/detailsDef.php?id=\">$subject</a>";
+                    } elsif( $source{$subject} =~ "HOCOMOCO" ) {
+                        $ref_str = "<a href=\"http://hocomoco.autosome.ru/motif/\">$subject</a>";
+                    } else  {
+                        if( defined $source{$subject} )   { print STDOUT  "source: ", $source{$subject}, "\n"  if $DEBUG; }
+                        if( $source{$subject} ne "Query" )  { $source{$subject} = "--"; }
+                        $ref_str = "-";
+                    }
 					my $d = sprintf("%.3f", $divergence);
 					$rowcontent .= td($pwm_name{$subject}); $txt_rowcontent .= $pwm_name{$subject} . "\t"; $cstxt_rowcontent .= $pwm_name{$subject} . ";";
 					#$rowcontent .= td($class{$subject}); $txt_rowcontent .= $class{$subject} . "\t"; $cstxt_rowcontent .= $class{$subject} . ";";
@@ -277,13 +280,18 @@ foreach  my $query_id (keys %query_set_ids)  {
 					my $counter = 303;
 					my $x = $subject;
 					$x =~ s/^M(0){1,4}//;
-					if( $source{$subject} =~ "TRANSFAC" )  { $ref_str = "<a href=\"http://www.biobase.de/cgi-bin/biobase/transfac/8.4/bin/getTFProf.cgi\?$subject\">$subject</a>"; }
-					elsif( $source{$subject} =~ "PUBLIC" and $counter <= 302 )  { 
+					if( $source{$subject} =~ "TRANSFAC" )  { $ref_str = "<a href=\"http://www.biobase.de/cgi-bin/biobase/transfac/8.4/bin/getTFProf.cgi\?$subject\">$subject</a>";
+                    } elsif( $source{$subject} =~ "PUBLIC" and $counter <= 302 )  {
 						$ref_str = "<a href=\"http://www.cbil.upenn.edu/cgi-bin/tess/tess?request=MTX-DBRTRV-Accno&key=$subject\">$subject</a>"; 
-					}  elsif( $source{$subject} =~ "PUBLIC" and $counter > 302 )  { 
+					} elsif( $source{$subject} =~ "PUBLIC" and $counter > 302 )  {
 						$ref_str = "<a href=http://www.gene-regulation.com/cgi-bin/pub/databases/transfac/getTF.cgi?AC=\"$subject\">$subject</a>"; 
-					} elsif( $source{$subject} =~ "JASPAR" )  { $ref_str = "<a href=\"http://jaspar.cgb.ki.se/cgi-bin/jaspar_db.pl?ID=$subject&rm=present\">$subject</a>"; 
-					} else  { 
+					} elsif( $source{$subject} =~ "JASPAR" )  {
+                        $ref_str = "<a href=\"http://jaspar.cgb.ki.se/cgi-bin/jaspar_db.pl?ID=$subject&rm=present\">$subject</a>";
+                    } elsif( $source{$subject} =~ "UniPROBE" ) {
+                        $ref_str = "<a href=\"http://the_brain.bwh.harvard.edu/uniprobe/detailsDef.php?id=\">$subject</a>";
+                    } elsif( $source{$subject} =~ "HOCOMOCO" ) {
+                        $ref_str = "<a href=\"http://hocomoco.autosome.ru/motif/\">$subject</a>";
+                    } else  {
 						if( defined $source{$subject} )   { print STDOUT  "source: ", $source{$subject}, "\n"  if $DEBUG; }
 						if( $source{$subject} ne "Query" )  { $source{$subject} = "--"; }
 						$ref_str = "-";
