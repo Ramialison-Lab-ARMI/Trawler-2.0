@@ -1,10 +1,11 @@
+#!/usr/bin/perl
+
 ####################################################################################################
 #### ARMI Monash University                                                                     ####
 #### 10-12-2014                                                                                 ####
 #### this program generates a random background from a sample distribution and an average length####
 #### requires sample bedfile and organism name 													####
 ####################################################################################################
-#!/usr/bin/perl
 
 use List::Util qw(sum);
 use strict;

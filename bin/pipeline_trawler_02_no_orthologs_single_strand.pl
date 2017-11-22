@@ -76,9 +76,7 @@ GetOptions(
 if (!$help || !$file_motif || !$file_sequences) {
 
     print STDERR "\nUSAGE : \n \n perl pipeline_trawler_02_no_orthologs.pl  -motif [the complete path to the XX.cluster file from pipeline_trawler1.pl ]  -sequences [complete path to the sequences sequence in fasta format (sample file in pipeline trawler1 ] ]\n\n for example \n\n
-perl pipeline_trawler_02_no_orthologs.pl -motif /path/ip-test/ip-test.cluster -sequences /path/sequences/sample.fasta\n\n
-
-===========================================\n===========================================\n \n";
+perl pipeline_trawler_02_no_orthologs.pl -motif /path/ip-test/ip-test.cluster -sequences /path/sequences/sample.fasta\n\n===========================================\n===========================================\n \n";
     exit(1);
 }
 

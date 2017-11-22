@@ -1,3 +1,5 @@
+#!/usr/bin/perl
+
 #########################################################################
 #ARMI Monash 15/12/2014                                                 #
 #Louis Dang                                                             #
@@ -5,7 +7,6 @@
 #Requires bed file, complete set of chromosome fasta sequence           #
 #accepts bedfile with or without chr at the start                       #
 #########################################################################
-#! usr/bin/perl
 
 use strict;
 use warnings;

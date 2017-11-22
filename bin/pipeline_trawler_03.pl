@@ -101,9 +101,11 @@ my $RES_PATH = $tcst{RES_PATH};
 
 my $directory = undef;
 my $conservation = undef;
+my $org;
 GetOptions(
   'directory=s'    => \$directory,
   'conservation=s' => \$conservation,
+  'org:s'          => \$org,
 );
 
 # are we in conservation mode ?
@@ -394,26 +396,27 @@ foreach my $family(keys %families) {
           $instance_with_bestSD_at_this_position = $stat{$hits_num_seq}[2];
         }
 
-        if ($conservation) {
-          @{$unique_positions{$instance_position}} = ( a( { -href => "#", title => $jalview_link }, $stat{$hits_num_seq}[0] ),
-                                                       $stat{$hits_num_seq}[3],
-                                                       $stat{$hits_num_seq}[8], # start position from end
-                                                       $stat{$hits_num_seq}[4],
-                                                       $bestCS_at_this_position,
-                                                       $instance_with_bestCS_at_this_position,
-                                                       $bestSD_at_this_position,
-                                                       $instance_with_bestSD_at_this_position,
-                                                       $stat{$hits_num_seq}[7]); # strand
-        }
-        else {
-          @{$unique_positions{$instance_position}} = ( a( { -href => "#", title => $jalview_link }, $stat{$hits_num_seq}[0] ),
-                                                       $stat{$hits_num_seq}[3],
-                                                       $stat{$hits_num_seq}[8], # start position from end
-                                                       $bestSD_at_this_position,
-                                                       $instance_with_bestSD_at_this_position,
-                                                       $stat{$hits_num_seq}[7]); # strand
-
-        }
+          if ($conservation) {
+              my ($chr, $start, $end) = split ('\-', $stat{$hits_num_seq}[0]);
+              @{$unique_positions{$instance_position}} = ( a( { -href => 'http://genome.ucsc.edu/cgi-bin/hgTracks?db='.$org.'&position='.$chr.'%3A'.$stat{$hits_num_seq}[3].'-'.$stat{$hits_num_seq}[8], title => "This" ,target => "blank" }, $stat{$hits_num_seq}[0] ),
+              $stat{$hits_num_seq}[3],
+              $stat{$hits_num_seq}[8], # start position from end
+              $stat{$hits_num_seq}[4],
+              $bestCS_at_this_position,
+              $instance_with_bestCS_at_this_position,
+              $bestSD_at_this_position,
+              $instance_with_bestSD_at_this_position,
+              $stat{$hits_num_seq}[7]); # strand
+          }
+          else {
+              @{$unique_positions{$instance_position}} = ( a( { -href => "#", title => $jalview_link }, $stat{$hits_num_seq}[0] ),
+              $stat{$hits_num_seq}[3],
+              $stat{$hits_num_seq}[8], # start position from end
+              $bestSD_at_this_position,
+              $instance_with_bestSD_at_this_position,
+              $stat{$hits_num_seq}[7]); # strand
+              
+          }
 
       # if ($stat{$hits_num_seq}[4]>$unique_positions{$instance_position}[2]){ #best CS
       #	@{$unique_positions{$instance_position}}=(a({-href=>$jalview_link},$stat{$hits_num_seq}[0]),$stat{$hits_num_seq}[3],$stat{$hits_num_seq}[4],$stat{$hits_num_seq}[5],$stat{$hits_num_seq}[2],$unique_positions{$instance_position}[4],$unique_positions{$instance_position}[5]);
