@@ -284,13 +284,13 @@ USAGE
 
     print STDERR $usage."\n";
 
-    exit(1);
+    exit(0);
 }
 
 sub trawler_version {
     my $version = "trawler standalone \"$tcst{trawler_version}\"\n";
     print $version;
-    exit(1);
+    exit(0);
 }
 
 #------------------------------------------------------------------------------
