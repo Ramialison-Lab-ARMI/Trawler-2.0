@@ -35,11 +35,11 @@ _read_config($FindBin::RealBin);
 my %tcst = _tcst();
 
 GetOptions(
-	'motif:s'     => \$file_motif,
-	'sequences:s' => \$file_sequences,
-	'directory=s' => \$directory,
-	'help:s'      => \$help,
-	'org=s'       => \$org,
+'motif:s'     => \$file_motif,
+'sequences:s' => \$file_sequences,
+'directory=s' => \$directory,
+'help:s'      => \$help,
+'org=s'       => \$org,
 );
 
 my $counter = 0;
@@ -99,6 +99,7 @@ open (FHT, '>', $temp_motif_bed) or die "could not open temporary motif bed file
 
 my %FEATURES;
 my %SCORES;
+my %LENGTHS;
 
 foreach my $id (keys %$id2sequences) {
     # fasta file: $TRAWLER_RESULT/fasta/<id>.fasta
@@ -106,6 +107,7 @@ foreach my $id (keys %$id2sequences) {
     my @loc_array = split(/\-/, $id);
     open(OUT, ">$file") or croak "Cannot open file $file: $!";
     my $ref_seq = $$id2sequences{$id};
+    $LENGTHS{$id} = length($ref_seq);
     print OUT ">$id\n$ref_seq\n";
     foreach my $idmotif (keys %$id2motif) {
         my @motifs = @{$$id2motif{$idmotif}};
@@ -123,12 +125,12 @@ foreach my $id (keys %$id2sequences) {
                     #get bed for motifs
                     my $b_start = $loc_array[1] + $m_start;
                     my $b_end = $b_start + $length_seq;
-                    my $loci = $loc_array[0]."\t".$b_start."\t".$b_end."\t".$motif."\t".$m_strand;
+                    my $loci = $loc_array[0]."\t".$b_start."\t".$b_end."\t".$loc_array[0]."_".$b_start."_".$b_end."_".$motif."_".$m_strand."_".$id."_".$m_start."_".$m_end;
                     print FHT $loci."\n";
                     
-                    my $id = $loc_array[0]."_".$b_start."_".$b_end."_".$m_strand;
-                    push @{$FEATURES{$idmotif}->{$id}->{$motif}->{"start"}}, $b_start;
-                    push @{$FEATURES{$idmotif}->{$id}->{$motif}->{"end"}}, $b_end;
+                    #my $id = $loc_array[0]."_".$b_start."_".$b_end."_".$m_strand;
+                    push @{$FEATURES{$idmotif}->{$id}->{$motif}->{"start"}}, $m_start;
+                    push @{$FEATURES{$idmotif}->{$id}->{$motif}->{"end"}}, $m_end;
                     
                 }
             }
@@ -145,28 +147,33 @@ open (PHSTCN_SC, $phastcon_scores) or die;
 
 while (my $line = <PHSTCN_SC>){
     chomp ($line);
-    my ($chr, $start, $end, $avg, $max) = split(/\t/, $line);
-    $SCORES{$chr."_".$start."_".$end}=$avg."\t".$max;
+    my ($chr, $start, $end, $avg, $max, $motif, $strand, $id) = split(/\t/, $line);
+#    my @seq = split(/\-/,$id);
+#    my $m_start = $start-$seq[1];
+#    my $m_end = $seq[2]-$end;
+    $SCORES{$id}=$chr."\t".$start."\t".$end."\t".$avg."\t".$max."\t".$motif."\t".$strand."\t".$id;
 }
 ####
 
 #Generate STAT file
 my $file_stat = File::Spec->catfile($tmp_features_dir, $tcst{STAT_FILE_NAME});
 open (STAT_FILE, '>', $file_stat) or die;
-print STAT_FILE "#id\tmotif_id\tmotif\tstart\taverage_conservation\tmax_conservation\tsequence_length\tstrand\tstart_from_end\n";
+print STAT_FILE "#id\tmotif_id\tmotif\tstart\taverage_conservation\tmax_conservation\tsequence_length\tstrand\tstart_from_end\tmotif_start\tmotif_end\n";
 
 foreach my $idmotif ( keys %FEATURES ){
     foreach my $loc ( keys $FEATURES{$idmotif} ){
         foreach my $mot (keys  $FEATURES{$idmotif}{$loc} ){
-            my ($chr, $start, $end, $strand) = split ('_', $loc);
-
-            my $length = $end - $start;
-            my $id = $chr."_".$start."_".$end;
-
-            if ($SCORES{$id}){
-                print STAT_FILE $id."\t".$idmotif."\t".$mot."\t".$start."\t".$SCORES{$id}."\t".$length."\t".$strand."\t".$end."\n";
+                my $start = $FEATURES{$idmotif}{$loc}{$mot}{"start"}[0];
+                my $end = $FEATURES{$idmotif}{$loc}{$mot}{"end"}[0];
+            if ($SCORES{$loc.'_'.$start.'_'.$end}){
+                my ($chr, $start, $end, $avg, $max, $motif, $strand, $id) = split('\t', $SCORES{$loc.'_'.$start.'_'.$end});
+		my ($loc,$mstart,$mend) = split(/\_/,$id);
+                print STAT_FILE $loc."\t".$idmotif."\t".$mot."\t".$mstart."\t".$avg."\t".$max."\t".$LENGTHS{$loc}."\t".$strand."\t".$mend."\t".$start."\t".$end."\n";
             }else{#if phastcon score not available for bed region
-                print STAT_FILE $loc."\t".$idmotif."\t".$mot."\t".$start."\t0\t0\t".$length."\t".$strand."\t".$end."\n";
+                #my $start = $FEATURES{$idmotif}{$loc}{$mot}->{"start"};
+                #my $end = $FEATURES{$idmotif}{$loc}{$mot}->{"end"};
+		#my $length = $end - $start;
+                print STAT_FILE $loc."\t".$idmotif."\t".$mot."\t".$start."\t0\t0\t".$LENGTHS{$loc}."\t1\t".$end."\n";
             }
         }
     }
@@ -248,40 +255,24 @@ sub get_conservation{
     #sort motif bed into hash based on chromosome
     open(FHM, $motif_bed_in) or die;
     
-    my $counter = 0;
-    while (my $line = <FHM>){
-        chomp($line);
-        my($chr, $start, $end, $motif, $strand) = split (/\t/, $line);
-        $avgInput{$chr}{$chr."_".$counter} = $start."\t".$end."\t".$chr."_".$start."_".$end."_".$motif."_".$strand;
-        $counter++;
-    }
-    
     close(FHM);
     #=========================================================
     open (FHO, '>', $phastcon_output) or die; #final output
 
     if ( my $chr = keys %phastcon_files == 1 ){#if phastcon file saved as single file
-        
-        my $temp_input = create_tmp_file( 'temp_input_XXXX', $tmp_bed_dir, '.bed');
-        
-        open (TEMP, '>', $temp_input) or die;
-        while ( my ($chr, $value) = each %avgInput ){
-            while ( my ($region) = each $avgInput{$chr} ){
-
-                print TEMP $chr."\t".$avgInput{$chr}{$region}."\n";#need 4th column as name
-                
-            }
-        }
-
-        print "extracting phastcon scores for ".$phastcon_files{$org}." into ".$temp_output."\n";
-        system($tcst{BW_AVG}." -minMax ".$input_dir."/".$phastcon_files{$org}." ".$temp_input." ".$temp_output);
+        #if only 1 bw file, put motif file directly into bwAvgOverBed
+        my $phastcon_file;
+        foreach (keys %phastcon_files) { $phastcon_file = $phastcon_files{$_}; }
+        print "extracting phastcon scores from ".$phastcon_file."\n";
+        system($tcst{BW_AVG}." -minMax ".$input_dir."/".$phastcon_file." ".$motif_bed_in." ".$temp_output.' 2>/dev/null');
 
         #process output file from bigWigAverageOverBed
         open (FHI, $temp_output) or die "could not open $temp_output";
         while (my $line = <FHI>) {
             chomp $line; #remove the end 'new line' symbol
             my @t=split('\s+',$line); #splits the line into separate strings
-            my ($chr, $start, $end) = split('\_', $t[0]);
+            my ($chr, $start, $end, $motif, $strand, $id, $mstart, $mend) = split('\_', $t[0]);
+	    #my ($bchr,$bstart,$bend) = split(/\-/, $id);
             if ((scalar(@t) < 8) || ($t[2] == 0)){
                 $max_temp_output = "NA";
                 $mean_temp_output = "NA";
@@ -290,10 +281,24 @@ sub get_conservation{
                 $mean_temp_output = $t[5];
             }
             
-            print FHO "$chr\t$start\t$end\t$mean_temp_output\t$max_temp_output\n";
+            print FHO "$chr\t$start\t$end\t$mean_temp_output\t$max_temp_output\t$motif\t$strand\t".$id."_".$mstart."_".$mend."\n";
         }
     }else{#for phastcon files separated into files by chromosome
-    
+        
+        open(FHM, $motif_bed_in) or die;
+        
+        my $counter = 0;
+        my %avgInput;
+
+        while (my $line = <FHM>){
+            chomp($line);
+            my($chr, $start, $end, $id) = split (/\t/, $line);
+            #$avgInput{$chr}{$chr."_".$counter} = $start."\t".$end."\t".$chr."_".$start."_".$end."_".$id;
+            $avgInput{$chr}{$chr."_".$counter} = $start."\t".$end."\t".$id;
+            $counter++;
+        }
+        
+        close(FHM);
         foreach my $chr ( sort keys %avgInput ){ #create bed file and generate phastcon based on chr
             
             my $temp_input = create_tmp_file( $chr.'_XXXX', $tmp_bed_dir, '.bed');
@@ -306,14 +311,15 @@ sub get_conservation{
             close TEMP;
             if ($phastcon_files{$chr}){
                 print "extracting phastcon scores for $chr\n";
-                system($tcst{BW_AVG}." -minMax ".$input_dir."/".$phastcon_files{$chr}." ".$temp_input." ".$temp_output);
+                system("$tcst{BW_AVG} -minMax ".$input_dir."/".$phastcon_files{$chr}." $temp_input $temp_output 2>/dev/null");
                 
                 #process output file from bigWigAverageOverBed
                 open (FHI, $temp_output) or die "could not open $temp_output";
                 while (my $line = <FHI>) {
                     chomp $line; #remove the end 'new line' symbol
                     my @t=split('\s+',$line); #splits the line into separate strings
-                    my ($chr, $start, $end) = split('\_', $t[0]);
+                    my ($chr, $start, $end, $motif, $strand, $id, $mstart, $mend) = split('\_', $t[0]);
+		    my @line_array = split('\_',$t[0]);
                     if ((scalar(@t) < 8) || ($t[2] == 0)){
                         $max_temp_output = "NA";
                         $mean_temp_output = "NA";
@@ -321,8 +327,7 @@ sub get_conservation{
                         $max_temp_output = $t[7];
                         $mean_temp_output = $t[5];
                     }
-                    
-                    print FHO "$chr\t$start\t$end\t$mean_temp_output\t$max_temp_output\n";
+                    print FHO "$chr\t$start\t$end\t$mean_temp_output\t$max_temp_output\t$motif\t$strand\t".$id."_".$mstart."_".$mend."\n";
                 }
             }
             close(FHI);
