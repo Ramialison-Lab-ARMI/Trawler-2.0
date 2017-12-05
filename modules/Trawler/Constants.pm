@@ -195,6 +195,7 @@ sub _read_config {
 
         # HTML DIR
         HTML_CSS      => "css",
+        HTML_BS       => "bs",
         HTML_DOWNLOAD => "downloads",
         HTML_IMG      => "images",
         HTML_JS       => "js",
