@@ -1,0 +1,135 @@
+/* Move down content because we have a fixed navbar that is 50px tall */
+body {
+  padding-top: 50px;
+  padding-bottom: 20px;
+}
+
+html { overflow-y: scroll; }
+
+.navbar-default .container { width: 100% !important; }
+
+/* navbar */
+.navbar-header {
+    background-color: #2f003a;
+    border-color: #000000;
+}
+
+.navbar {
+    background-color: #2f003a;
+    border-color: #000000;
+}
+
+.navbar-inverse .navbar-brand {
+	color: #fff;
+}
+
+
+.pwm {
+    width: 25%;
+}
+
+.HATFD {
+    font-size: 10px;
+}
+
+table.dataTable thead .sorting { background: url('sort_both.png') no-repeat center right; }
+table.dataTable thead .sorting_asc { background: url('sort_asc.png') no-repeat center right; }
+table.dataTable thead .sorting_desc { background: url('sort_desc.png') no-repeat center right; }
+
+table.dataTable thead .sorting_asc_disabled { background: url('sort_asc_disabled.png') no-repeat center right; }
+table.dataTable thead .sorting_desc_disabled { background: url('sort_desc_disabled.png') no-repeat center right; }
+
+/* Link */
+.navbar-default .navbar-nav > li > a {
+    color: #18001e;
+}
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+    color: #18001e;
+}
+.navbar-default .navbar-nav > .active > a,
+.navbar-default .navbar-nav > .active > a:hover,
+.navbar-default .navbar-nav > .active > a:focus {
+    color: #18001e;
+    background-color: #18001e;
+}
+.navbar-default .navbar-nav > .open > a,
+.navbar-default .navbar-nav > .open > a:hover,
+.navbar-default .navbar-nav > .open > a:focus {
+    color: #18001e;
+    background-color: #18001e;
+}
+/* Caret */
+.navbar-default .navbar-nav > .dropdown > a .caret {
+    border-top-color: #18001e;
+    border-bottom-color: #18001e;
+}
+.navbar-default .navbar-nav > .dropdown > a:hover .caret,
+.navbar-default .navbar-nav > .dropdown > a:focus .caret {
+    border-top-color: #18001e;
+    border-bottom-color: #18001e;
+}
+.navbar-default .navbar-nav > .open > a .caret,
+.navbar-default .navbar-nav > .open > a:hover .caret,
+.navbar-default .navbar-nav > .open > a:focus .caret {
+    border-top-color: #18001e;
+    border-bottom-color: #18001e;
+}
+.navbar-inverse .navbar-nav>.active>a,
+.navbar-inverse .navbar-nav>.active>a:focus,
+.navbar-inverse .navbar-nav>.active>a:hover {
+	color: #fff;
+    background-color: #1e0026;
+}
+
+
+
+
+.jumbotron {
+	background-color: #ffebff;
+}
+
+/* Title */
+.navbar-brand {
+        font-size: 20px;
+}
+
+.navbar-default .navbar-brand {
+    color: #000000;
+}
+body{
+	background: #ffceff;
+}
+.panel {
+	background: #fff2ff;
+}
+
+.btn-primary {
+	background: #590a91;
+	border-color: #000000;
+}
+.btn-primary:hover {
+    background: #4c077c;
+    border-color: #000000;
+}
+.btn-primary:active {
+	background: #3d0563 !important;
+	border-color: #000000;
+}
+
+.nav-pills > li.active > a, .nav-pills > li.active > a:focus, .nav-pills > li.active > a:hover {
+    background: #590a91;
+    border-color: #000000;
+}
+
+
+
+body {
+  padding-top: 50px;
+}
+.starter-template {
+  padding: 40px 15px;
+  text-align: center;
+}
+
+
