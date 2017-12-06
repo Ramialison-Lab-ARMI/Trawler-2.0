@@ -27,7 +27,7 @@
 =head1 CONTACT
 
   EMBL 2008
-  Mirana Ramialison mirana.ramialison@monash.edu
+  Mirana Ramialison ramialis@embl.de
   Yannick Haudry haudry@embl.de
 
 =cut
@@ -63,17 +63,11 @@ use constant CLASS_TAB  =>  'tab_panel';
 use constant CLASS_SORTER  =>  'tablesorter';
 use constant CLASS_TOOLTIP  =>  'tooltip';
 
-use constant LINK_JS_FILE => 'js/base.js';
-use constant LINK_CSS_FILE => 'css/style.css';
-
-use constant LINK_TRAWLER => 'http://ani.embl.de/laurence/blog/';
-use constant LINK_TRAWLER_WEB => 'http://ani.embl.de/trawler/';
-use constant LINK_TRAWLER_GITHUB => 'https://github.com/Ramialison-Lab-ARMI/Trawler-2.0';
+use constant LINK_TRAWLER => 'https://trawler.erc.monash.edu.au';
 
 use constant MAILTO_BENEDICT => 'mailto:benedict@soe.ucsc.edu';
 use constant MAILTO_MIRANA => 'mailto:mirana.ramialison@monash.edu';
 use constant MAILTO_YANNICK => 'mailto:haudry@embl.de';
-use constant MAILTO_LOUIS => 'mailto:louis.dang@monash.edu';
 
 ###############################################################################
 
@@ -101,11 +95,11 @@ my $RES_PATH = $tcst{RES_PATH};
 
 my $directory = undef;
 my $conservation = undef;
-my $org;
+my $org = undef;
 GetOptions(
   'directory=s'    => \$directory,
   'conservation=s' => \$conservation,
-  'org:s'          => \$org,
+  'org:s'    => \$org,
 );
 
 # are we in conservation mode ?
@@ -125,7 +119,7 @@ my $version = $tcst{trawler_version};
 # FIXME[YH]: naming conventions..
 my ($RES_DIR_NAME, $RES_DIR_PATH) = fileparse($directory);
 my $WORKING_DIR = File::Spec->catdir( $directory, $tcst{RES_DIR_NAME} );
-
+my $session_id = basename($directory);
 
 my $COMPARE_FILE_NAME = File::Spec->catfile($WORKING_DIR, $RES_DIR_NAME . "_compare.txt");
 my $STAT_FILE_NAME = File::Spec->catfile(($WORKING_DIR, "features"), $tcst{STAT_FILE_NAME} );
@@ -133,9 +127,6 @@ my $CLUSTER_FILE_NAME = File::Spec->catfile($WORKING_DIR, $RES_DIR_NAME . $tcst{
 my $PWM_FILE = File::Spec->catfile($WORKING_DIR, $RES_DIR_NAME . $tcst{PWM_FILE_EXT} );
 my $HTML_INDEX = File::Spec->catfile($directory, HTML_INDEX);
 
-# FIXME[YH]: use property
-my $JS_SCRIPT = LINK_JS_FILE;
-my $CSS_SCRIPT = LINK_CSS_FILE;
 
 #### Downloadable files [not system dependent !!!, hence do not use cat() function]
 my $input_link_dir = $tcst{INPUT_DIR_NAME} . "/";
@@ -153,8 +144,9 @@ my $pwm_file_link = $result_link_dir . $RES_DIR_NAME . $tcst{PWM_FILE_EXT};
 my $html_download_dir = File::Spec->catdir( $directory, $tcst{HTML_DOWNLOAD} );
 my $html_input_dir = File::Spec->catdir( $directory, $tcst{HTML_INPUT} );
 
-my $sample_file = $html_download_dir."/sample.fa";
-my $background_file = $html_download_dir."/rand_bg.fa";
+my $sample_file = $tcst{HTML_DOWNLOAD} . "/sample.fa";
+my $background_file = $tcst{HTML_DOWNLOAD} . "/rand_bg.fa";
+my $zip = $tcst{HTML_DOWNLOAD}.'/'.$session_id.'.zip';
 
 if ($DEBUG) {
     print "abs path[RES_DIR_PATH]: $RES_DIR_PATH \n";
@@ -165,7 +157,6 @@ if ($DEBUG) {
     print "stat file path[STAT_FILE_NAME]: $STAT_FILE_NAME \n";
     print "pwm file [PWM_FILE]: $PWM_FILE \n";
     print "result path $RES_PATH \n";
-    print "$JS_SCRIPT \n";
 }
 
 #############################################################
@@ -179,34 +170,82 @@ if ($DEBUG) {
 # init Tabs
 sub printHTMLhead() {
  return <<Head;
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE html
-    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
-<head>
-  <title>TRAWLER: over-represented motifs</title>
-  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
-  <meta http-equiv="Content-Style-Type" content="text/css" />
-  <meta name="keywords" content="motif discovery" />
-  <meta name="copyright" content="copyright 2008 EMBL" />
-  <link rel="stylesheet" type="text/css" href="$CSS_SCRIPT" />
-  <!--[if IE]><script language="javascript" type="text/javascript" src="js/excanvas.js"></script><![endif]-->
-  <script src="$JS_SCRIPT" type="text/javascript"></script>
-  <script type="text/javascript">
-  // <![CDATA[
-    \$(function(){
-      \$("a[rel*='external']").click(function(){this.target="_blank";});
-      \$("#container").tabs({selected:2,fx:{opacity:"toggle"}});
-      sortIndex();
-      \$(".delete").click(function(){\$(this).parent("div").hide("slow");return false;});
-      \$(".tooltip a").hover(function(){\$(this).next("em").animate({opacity:"show",top:"-80"},"slow");},
-                             function(){\$(this).next("em").animate({opacity:"hide",top:"-85"},"fast");});
-    });
-  // ]]>
-  </script>
-</head>
-<body>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="de scription" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="bs/favicon.ico">
+
+    <title>Trawler: Results</title>
+
+    <link href="bs/bootstrap.min.css" rel="stylesheet">
+    <link href="bs/jumbotron.css" rel="stylesheet">
+    
+    <script src="bs/jquery.min.js"></script>
+    <script src="bs/bootstrap.min.js"></script>
+    <script src="bs/jquery.dataTables.min.js"></script>
+    <script src="bs/dataTables.bootstrap.min.js"></script>
+    
+    <script src="bs/jquery.flot.min.js"></script>
+    <script src="bs/jquery.flot.axislabels.js"></script>
+
+    <script>
+
+      \$(document).ready(function() {
+        \$('#idx').DataTable( {
+          "paging":   false,
+          "searching": false,
+          "info": false,
+          "order": [[ 3, "desc" ]]
+        })
+      })
+
+    </script>
+
+
+  </head>
+
+  <body>
+
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a  href="https://twitter.com/ramialison_lab" target="blank">
+          <img class="navbar-brand" src="bs/zfish_og.png" alt="zebrafish_logo" width="80" height="100" align="left" href="https://twitter.com/ramialison_lab" target="blank"></a>
+          <a class="navbar-brand" href="http://trawler.erc.monash.edu.au/">Trawler</a>
+
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="http://trawler.erc.monash.edu.au/">Home</a></li>
+            <li><a href="http://trawler.erc.monash.edu.au/help/">Help</a></li>
+            <li class="active"><a href="index.html">Results</a></li>
+          </ul>
+         <img src="bs/logoARMI-MONASH.png" alt="zebrafish_logo" width="184" height="32" vspace="8" align="right"  usemap="#bannermap">
+         <map name="bannermap">
+          <area shape="rect" coords="0,0,100,32" alt="Monash" href="http://www.monash.edu/" target="blank">
+          <area shape="rect" coords="110,0,184,32" alt="ARMI" href="http://www.armi.org.au/" target="blank">
+        </map>
+        </div><!--/.nav-collapse -->
+
+      </div>
+    </nav>
+
+    </br>
+    <div class="container">
+    
+      <div class="panel panel-default">
+        <div class="panel-heading">
 
 Head
 }
@@ -255,7 +294,7 @@ foreach my $h (keys %cluster){
 }
 
 my %main_list;
-my $tab_count = 2; # 2 is the Result tab [input | download | results | famailies...]
+my $tab_count = 1; # 2 is the Result tab [input | download | results | famailies...]
 foreach my $family(keys %families) {
   $tab_count++;
 
@@ -263,17 +302,17 @@ foreach my $family(keys %families) {
   my $image = File::Spec->catfile($tcst{HTML_IMG}, $family . $tcst{MOTIF_PNG_EXT});
 
   # tab link (image column)
-  my $image_scr = a( { href => '#', onclick => "\$('#container').tabs('select', $tab_count);" },
+  my $image_scr = a( { href => '#', onclick => "\$('[href=\"#".$family."\"]').tab('show');" },
                        img( { -src => $image, -class => 'small', -alt=>$image } ) );
 
-  # tab link (family column)
-  my $html_link = a( {href=>'#', onclick=>"\$('#container').tabs('select', $tab_count);"}, $family );
+  # tab link (family column) $('.nav-tabs a[href='+hash+']').tab('show');
+  my $html_link = a( { href => '#', onclick => "\$('[href=\"#".$family."\"]').tab('show');"}, $family );
 
   #extract compare Table1
   my $compare_list;
   my $compare_family;
-  $compare_family = start_table( { class => 'tablesorter tooltip', id => $family."Tf" } );
-#	foreach my $hits_num_comp (sort keys %compare){
+  $compare_family = start_table( { class => 'table table-striped table-hover table-bordered HATFD', id => $family."Tf" } );
+# foreach my $hits_num_comp (sort keys %compare){
 #        if ($compare{$hits_num_comp}[0] eq 'Query_ID'){ #headline
 #            $compare_family.=Tr(th([
 #                                    @{$compare{$hits_num_comp}}
@@ -287,8 +326,8 @@ foreach my $family(keys %families) {
 #        }
 #    }
   my $compare_family_thead;
-    my $compare_family_tbody;
-    my $Query_ID="Name of the input family matrix (query)";
+  my $compare_family_tbody;
+  my $Query_ID="Name of the input family matrix (query)";
   my $Query_Consensus="Consensus of the query matrix";
   my $Subject_Name="Name of the hit matrix with divergence smaller than the given cutoff (subject)";
   my $Source_DB="Source database of the subject matrix";
@@ -305,48 +344,48 @@ foreach my $family(keys %families) {
     if ($compare{$hits_num_comp}[0] eq 'Query_ID'){
       #$compare_family_thead .= Tr( th( [ @{$compare{$hits_num_comp}} ] ) );
       $compare_family_thead .= Tr( th( [
-                   div( a({href=>"#"}, $compare{$hits_num_comp}[0]), em($Query_ID)),
-                   div( a({href=>"#"}, $compare{$hits_num_comp}[1]), em($Query_Consensus)),
-                   div( a({href=>"#"}, $compare{$hits_num_comp}[2]), em($Subject_Name)),
-                   div( a({href=>"#"}, $compare{$hits_num_comp}[3]), em($Source_DB)),
-                   div( a({href=>"#"}, $compare{$hits_num_comp}[4]), em($Subject_ID)),
-                   div( a({href=>"#"}, $compare{$hits_num_comp}[5]), em($Length)),
-                   div( a({href=>"#"}, $compare{$hits_num_comp}[6]), em($Orientation)),
-                   div( a({href=>"#"}, $compare{$hits_num_comp}[7]), em($Offset)),
-                   div( a({href=>"#"}, $compare{$hits_num_comp}[8]), em($Divergence)),
-                   div( a({href=>"#"}, $compare{$hits_num_comp}[9]), em($Overlap)),
-                   div( a({href=>"#"}, $compare{$hits_num_comp}[10]), em($Subject_Consensus)),
+        div( { title => $Query_ID }, $compare{$hits_num_comp}[0]),
+        div( { title => $Query_Consensus }, $compare{$hits_num_comp}[1]),
+        div( { title => $Subject_Name }, $compare{$hits_num_comp}[2]),
+        div( { title => $Source_DB }, $compare{$hits_num_comp}[3]),
+        div( { title => $Subject_ID }, $compare{$hits_num_comp}[4]),
+        div( { title => $Length }, $compare{$hits_num_comp}[5]),
+        div( { title => $Orientation }, $compare{$hits_num_comp}[6]),
+        div( { title => $Offset }, $compare{$hits_num_comp}[7]),
+        div( { title => $Divergence }, $compare{$hits_num_comp}[8]),
+        div( { title => $Overlap }, $compare{$hits_num_comp}[9]),
+        div( { title => $Subject_Consensus }, $compare{$hits_num_comp}[10]),
                    ] ) );
     }
     # tbody TF db
     if ($compare{$hits_num_comp}[0] eq $family) {
-        # Add HOCOMOCO / JASPAR links
-        if ($compare{$hits_num_comp}[3] eq 'JASPAR') {
-           my $id = $compare{$hits_num_comp}[4];
-           $compare{$hits_num_comp}[3] = a( {
-            href => "http://jaspar.genereg.net/cgi-bin/jaspar_db.pl?ID=".$id."&rm=present&collection=CORE",
-            title => "JASPAR:".$id,
-            rel => "external" },
-            'JASPAR' );
-        } elsif ($compare{$hits_num_comp}[3] eq 'HOCOMOCO') {
-            my $id = $compare{$hits_num_comp}[4];
-            $compare{$hits_num_comp}[3] = a( {
-                href => "http://hocomoco.autosome.ru/motif/".$id,
-                title => "HOCOMOCO:".$id,
-                rel => "external" },
-                'HOCOMOCO' );
-        } elsif ($compare{$hits_num_comp}[3] eq 'UniPROBE') {
-            my $id = $compare{$hits_num_comp}[4];
-            $compare{$hits_num_comp}[3] = a( {
-                href => "http://the_brain.bwh.harvard.edu/uniprobe/detailsDef.php?id=".$id,
-                title => "UniPROBE:".$id,
-                rel => "external" },
-            'UniPROBE' );
-        }
+          # Add HOCOMOCO / JASPAR /UniPROBE links
+          if ($compare{$hits_num_comp}[3] eq 'JASPAR') {
+              my $id = $compare{$hits_num_comp}[4];
+              $compare{$hits_num_comp}[3] = a( {
+                  href => "http://jaspar.genereg.net/cgi-bin/jaspar_db.pl?ID=".$id."&rm=present&collection=CORE",
+                  title => "JASPAR:".$id,
+                  rel => "external" },
+              'JASPAR' );
+          } elsif ($compare{$hits_num_comp}[3] eq 'HOCOMOCO') {
+              my $id = $compare{$hits_num_comp}[4];
+              $compare{$hits_num_comp}[3] = a( {
+                  href => "http://hocomoco.autosome.ru/motif/".$id,
+                  title => "HOCOMOCO:".$id,
+                  rel => "external" },
+              'HOCOMOCO' );
+          } elsif ($compare{$hits_num_comp}[3] eq 'UniPROBE') {
+              my $id = $compare{$hits_num_comp}[4];
+              $compare{$hits_num_comp}[3] = a( {
+                  href => "http://the_brain.bwh.harvard.edu/uniprobe/detailsDef.php?id=".$id,
+                  title => "UniPROBE:".$id,
+                  rel => "external" },
+              'UniPROBE' );
+          }
         # Create table rows
       $compare_family_tbody .= Tr( td( [ @{$compare{$hits_num_comp}} ] ) );
       if (length($compare{$hits_num_comp}[2])>0){
-        $compare_list .= $compare{$hits_num_comp}[2].";";
+        $compare_list .= $compare{$hits_num_comp}[2].", ";
       }
     }
   } # end build TF db Table
@@ -387,7 +426,7 @@ foreach my $family(keys %families) {
         if ($stat{$hits_num_seq}[5] > $unique_positions{$instance_position}[4]) { #best CS
           $bestCS_at_this_position = $stat{$hits_num_seq}[5];
           $instance_with_bestCS_at_this_position = $stat{$hits_num_seq}[2];
-        }
+       }
 
         my $bestSD_at_this_position=$unique_positions{$instance_position}[5];
         my $instance_with_bestSD_at_this_position = $unique_positions{$instance_position}[6];
@@ -396,39 +435,53 @@ foreach my $family(keys %families) {
           $instance_with_bestSD_at_this_position = $stat{$hits_num_seq}[2];
         }
 
-          if ($conservation) {
-              my ($chr, $start, $end) = split ('\-', $stat{$hits_num_seq}[0]);
-              @{$unique_positions{$instance_position}} = ( a( { -href => 'http://genome.ucsc.edu/cgi-bin/hgTracks?db='.$org.'&position='.$chr.'%3A'.$stat{$hits_num_seq}[3].'-'.$stat{$hits_num_seq}[8], title => "This" ,target => "blank" }, $stat{$hits_num_seq}[0] ),
-              $stat{$hits_num_seq}[3],
-              $stat{$hits_num_seq}[8], # start position from end
-              $stat{$hits_num_seq}[4],
-              $bestCS_at_this_position,
-              $instance_with_bestCS_at_this_position,
-              $bestSD_at_this_position,
-              $instance_with_bestSD_at_this_position,
-              $stat{$hits_num_seq}[7]); # strand
-          }
-          else {
-              @{$unique_positions{$instance_position}} = ( a( { -href => "#", title => $jalview_link }, $stat{$hits_num_seq}[0] ),
-              $stat{$hits_num_seq}[3],
-              $stat{$hits_num_seq}[8], # start position from end
-              $bestSD_at_this_position,
-              $instance_with_bestSD_at_this_position,
-              $stat{$hits_num_seq}[7]); # strand
-              
-          }
+        if ($conservation) {
+    my ($chr, $start, $end) = split (/\-/, $stat{$hits_num_seq}[0]);
+    my $m_start = $start + $stat{$hits_num_seq}[3];
+    my $m_end = $end - $stat{$hits_num_seq}[8];
+    
+    my $chrTitle = $stat{$hits_num_seq}[0];
+    $chrTitle =~ s/\-/\:/;
+
+    @{$unique_positions{$instance_position}} = ( a( { -href => 'http://genome.ucsc.edu/cgi-bin/hgTracks?db='.$org.'&position='.$chr.'%3A'.$stat{$hits_num_seq}[9].'-'.$stat{$hits_num_seq}[10], -title => 'Display in UCSC', -target => 'blank' }, $chrTitle ),
+                                                       $stat{$hits_num_seq}[3],
+                                                       $stat{$hits_num_seq}[8], # start position from end
+                                                       $stat{$hits_num_seq}[4],
+                                                       $bestCS_at_this_position,
+                                                       $instance_with_bestCS_at_this_position,
+                                                       $bestSD_at_this_position,
+                                                       $instance_with_bestSD_at_this_position,
+                                                       $stat{$hits_num_seq}[7]); # strand
+        }
+        else {
+          @{$unique_positions{$instance_position}} = ( $stat{$hits_num_seq}[0],
+                                                       $stat{$hits_num_seq}[3],
+                                                       $stat{$hits_num_seq}[8], # start position from end
+                                                       $bestSD_at_this_position,
+                                                       $instance_with_bestSD_at_this_position,
+                                                       $stat{$hits_num_seq}[7]); # strand
+
+        }
 
       # if ($stat{$hits_num_seq}[4]>$unique_positions{$instance_position}[2]){ #best CS
-      #	@{$unique_positions{$instance_position}}=(a({-href=>$jalview_link},$stat{$hits_num_seq}[0]),$stat{$hits_num_seq}[3],$stat{$hits_num_seq}[4],$stat{$hits_num_seq}[5],$stat{$hits_num_seq}[2],$unique_positions{$instance_position}[4],$unique_positions{$instance_position}[5]);
+      # @{$unique_positions{$instance_position}}=(a({-href=>$jalview_link},$stat{$hits_num_seq}[0]),$stat{$hits_num_seq}[3],$stat{$hits_num_seq}[4],$stat{$hits_num_seq}[5],$stat{$hits_num_seq}[2],$unique_positions{$instance_position}[4],$unique_positions{$instance_position}[5]);
       # }
       # if ($families_instances{$family."_".$stat{$hits_num_seq}[2]}>$unique_positions{$instance_position}[5]){ #best SD
-      #	@{$unique_positions{$instance_position}}=(a({-href=>$jalview_link},$stat{$hits_num_seq}[0]),$stat{$hits_num_seq}[3],$stat{$hits_num_seq}[4],$stat{$hits_num_seq}[5],$stat{$hits_num_seq}[2],$families_instances{$family."_".$stat{$hits_num_seq}[2]},$stat{$hits_num_seq}[2]);
+      # @{$unique_positions{$instance_position}}=(a({-href=>$jalview_link},$stat{$hits_num_seq}[0]),$stat{$hits_num_seq}[3],$stat{$hits_num_seq}[4],$stat{$hits_num_seq}[5],$stat{$hits_num_seq}[2],$families_instances{$family."_".$stat{$hits_num_seq}[2]},$stat{$hits_num_seq}[2]);
       # }
 
       }
       else { #new position
          if ($conservation) {
-           @{$unique_positions{$instance_position}} = ( a( { -href=>"#",title=>$jalview_link }, $stat{$hits_num_seq}[0] ),
+    my ($chr, $start, $end) = split (/\-/, $stat{$hits_num_seq}[0]);
+    my $m_start = $start + $stat{$hits_num_seq}[3];
+    my $m_end = $end - $stat{$hits_num_seq}[8];
+
+    my $chrTitle = $stat{$hits_num_seq}[0];
+    $chrTitle =~ s/\-/\:/;
+
+    @{$unique_positions{$instance_position}} = ( a( { -href => 'http://genome.ucsc.edu/cgi-bin/hgTracks?db='.$org.'&position='.$chr.'%3A'.$stat{$hits_num_seq}[9].'-'.$stat{$hits_num_seq}[10], title => 'Display in UCSC', target => 'blank'}, $chrTitle ),
+                #@{$unique_positions{$instance_position}} = ( a( { -href=>"#",title=>$jalview_link }, $stat{$hits_num_seq}[0] ),
                                                         $stat{$hits_num_seq}[3],
                                                         $stat{$hits_num_seq}[8], # start from end
                                                         $stat{$hits_num_seq}[4],
@@ -440,7 +493,7 @@ foreach my $family(keys %families) {
 
          }
          else {
-           @{$unique_positions{$instance_position}} = ( a( { -href=>"#",title=>$jalview_link }, $stat{$hits_num_seq}[0] ),
+           @{$unique_positions{$instance_position}} = ( $stat{$hits_num_seq}[0],
                                                         $stat{$hits_num_seq}[3],
                                                         $stat{$hits_num_seq}[8], # start position from end
                                                         $families_instances{$family."_".$stat{$hits_num_seq}[2]},
@@ -452,9 +505,9 @@ foreach my $family(keys %families) {
       }
     }
   }
-  my $seq_family = start_table( { class => 'tablesorter tooltip', id => $family."Occ" } );
+  my $seq_family = start_table( { class => 'table table-striped table-hover table-bordered HATFD', id => $family."Occ" } );
   # Tooltip text (on table header)
-  my $seq_txt='Click on the sequence name to view the motif in the sequence (Jalview)';
+  my $seq_txt='Click on the sequence name to view the motif in UCSC';
   my $sta_txt='Start position of the motif within the sequence (from start)';
   my $end_txt='Start position of the motif within the sequence (from end)';
   my $avc_txt='Average conservation of the whole sequence';
@@ -467,15 +520,15 @@ foreach my $family(keys %families) {
     $seq_family.= thead( Tr( th [
             #'Sequence', 'Start_position (from start)', 'Start_position (from end)', 'Average_conservation',
             #'Best_conservation_score', 'Instance_with_best_CS', 'Best_Z-score', 'Instance_with_best_ZS'
-            div( a({href=>"#"}, "Sequence"), em($seq_txt) ),
-            div( a({href=>"#"}, "Start_position (from start)"), em($sta_txt) ),
-            div( a({href=>"#"}, "Start_position (from end)"), em($end_txt) ),
-            div( a({href=>"#"}, "Average_conservation"), em($avc_txt) ),
-            div( a({href=>"#"}, "Best_conservation_score"), em($bcs_txt) ),
-            div( a({href=>"#"}, "Instance_with_best_CS"), em($ibc_txt) ),
-            div( a({href=>"#"}, "Best_Z-score"), em($bzs_txt) ),
-            div( a({href=>"#"}, "Instance_with_best_ZS"), em($ibz_txt) ),
-            div( a({href=>"#"}, "Strand"), em($strand_txt) )
+            div( { title => $seq_txt }, "Sequence"),
+            div( { title => $sta_txt }, "Start_position (from start)"),
+            div( { title => $end_txt }, "Start_position (from end)"),
+            div( { title => $avc_txt }, "Average conservation"),
+            div( { title => $bcs_txt }, "Best conservation score"),
+            div( { title => $ibc_txt }, "Instance_with_best_CS"),
+            div( { title => $bzs_txt }, "Best_Z-score"),
+            div( { title => $ibz_txt }, "Instance_with_best_ZS"),
+            div( { title => $strand_txt }, "Strand")
             ]
           ) );
   }
@@ -483,12 +536,12 @@ foreach my $family(keys %families) {
     $seq_family.= thead( Tr( th [
             #'Sequence', 'Start_position (from start)', 'Start_position (from end)',
             #'Best_Z-score', 'Instance_with_best_ZS'
-            div( a({href=>"#"}, "Sequence"), em($seq_txt) ),
-            div( a({href=>"#"}, "Start_position (from start)"), em($sta_txt) ),
-            div( a({href=>"#"}, "Start_position (from end)"), em($end_txt) ),
-            div( a({href=>"#"}, "Best_Z-score"), em($bzs_txt) ),
-            div( a({href=>"#"}, "Instance_with_best_ZS"), em($ibz_txt) ),
-            div( a({href=>"#"}, "Strand"), em($strand_txt) )
+            div( { title => $seq_txt }, "Sequence"),
+            div( { title => $sta_txt }, "Start_position (from start)"),
+            div( { title => $end_txt }, "Start_position (from end)"),
+            div( { title => $bzs_txt }, "Best_Z-score"),
+            div( { title => $ibz_txt }, "Instance_with_best_ZS"),
+            div( { title => $strand_txt }, "Strand")
             ]
           ) );
   }
@@ -520,6 +573,7 @@ print "Main list loaded\n" if $DEBUG;
 open(FINDEX, '>'.$HTML_INDEX) or croak "Can not create index.html file ($HTML_INDEX): $!";
 print FINDEX printHTMLhead(); # header and scripts
 #### --- HTML header
+=pod
 print FINDEX "<div id=\"tr-siteContain\">";
 print FINDEX "<div id=\"tr-header\">";
 print FINDEX div( {id=>'tr-helpNav'},
@@ -531,21 +585,19 @@ print FINDEX div( {id=>'tr-helpNav'},
              ) );
 print FINDEX "</div>"; # tr-header
 # TITLE
+print FINDEX h1( a( { href => "/index.html", style => "color:#6c2d7b" },"Trawler"));
 print FINDEX div( h2("Over-represented motifs discovery results") );
 # HELP containers: links
 print FINDEX div( { id => 'h_links', class => 'help hide-first' },
                   a( { href => '#', class => 'delete' }, "Hide" ),
                   a( { href => LINK_TRAWLER, rel => 'external' }, "Trawler Home Page"), br(),
-                  a( { href => LINK_TRAWLER_WEB, rel => 'external' }, "Trawler Web"), br(),
-                  a( { href => LINK_TRAWLER_GITHUB, rel => 'external' }, "Trawler standalone on GitHub"), br(),
                   );
 print FINDEX div( { id=>'h_contact', class=>'help hide-first' },
                   a( { href => '#', class=>'delete' }, "Hide"),
                   "Contacts: ", br(),
                   a( { href => MAILTO_BENEDICT }, "Benedict Paten"), br(),
                   a( { href => MAILTO_MIRANA }, "Mirana Ramialison"), br(),
-                  a( { href => MAILTO_YANNICK }, "Yannick Haudry"), br(),
-                  a( { href => MAILTO_LOUIS }, "Louis Dang", br()),
+                  a( { href => MAILTO_YANNICK }, "Yannick Haudry"), br()
                 );
 print FINDEX div( { id=>'h_license', class => 'help hide-first' },
                   a( { href => $license_file_link,
@@ -567,18 +619,24 @@ print FINDEX div( { id=>'h_readme', class=>'help hide-first' },
 ####
 print FINDEX "<div id=\"container\">";
 
+=cut
+
 #### --- tabbed menu ---
 my $family_tab_index;
 foreach my $family(keys %families) {
-  $family_tab_index .= li( a( { href => $family.".html", title => $family.'_tab' }, span($family) ) );
+  #$family_tab_index .= li( a( { href => $family.".html", title => $family.'_tab' }, span($family) ) );
+  $family_tab_index .= li( a( { 'data-toggle' => "tab", href => "#".$family }, span($family) ) );
 }
-print FINDEX ul(
-               li( a( { href => '#uinput' }, span('Input') ) ),
-               li( a( { href => '#udownload' }, span('Download') ) ),
-               li( a( { href => '#trmain' }, span('Results') ) ),
+print FINDEX ul( { class => "nav nav-pills", role => "tablist" },
+               li( a( { 'data-toggle' => "tab", href => '#udownload' }, span('Download') ) ),
+               li( { class => "active" }, a( { 'data-toggle' => "tab", href => '#trmain' }, span('Results') ) ),
                $family_tab_index
 );
+print FINDEX "</div>";
+print FINDEX "<div class=\"panel-body\"><div class=\"tab-content\">";
 
+
+=pod
 #### --- Input tab ---
 my $input_tab = div( { id => 'uinput', class => CLASS_TAB },
                 b("Input:"), br(),
@@ -598,79 +656,71 @@ my $input_tab = div( { id => 'uinput', class => CLASS_TAB },
 $input_tab .= input_file_script();
 # print input tab
 print FINDEX $input_tab;
+=cut
 
 #### --- Download tab ---
 
 #Legend: Trawler raw data and trawler sorted
-my $legend_trawler = "<b>column legend:</b><br/>" .
-                     "1- Motif occurrence in the sample <br/>" .
-                     "2- Motif occurrence in the background <br/>" .
-                     "3- Z score <br/>" .
-                     "4- Motif";
+my $legend_trawler = "Motif occurrence in the sample, Motif occurrence in the background, Z score, Motif";
 #Legend: Clustered motif
-my $legend_cluster = "<b>column legend:</b><br/>" .
-                     "1- Motif <br/>" .
-                     "2- Family name <br/>" .
-                     "3- Z score <br/>" .
-                     "4- Occurrence in the sample <br/>" .
-                     "5- Occurrence in the background <br/>" .
-                     "6- Strand";
+my $legend_cluster = "Motif, Family name, Z score, Occurrence in the sample, Occurrence in the background, Strand";
 
-my $download_tab = div( { id => 'udownload', class => CLASS_TAB },
-                   b("Download:"), br(),
+my $download_tab = div( { id => 'udownload', class => "tab-pane fade" },
+                   "Hover over download links for column descriptions</br></br>",
                    ul( # downloadable files
+                    li( a( { href => $input_file_link,
+                           rel => 'external', -target => 'blank'},
+                           "Trawler input options")
+                     ), # li input file
                      li( a( { href => $trawler_raw_file_link,
-                             rel => 'external',
-                              onmouseover => "showfilelegend('$trawler_raw_file_link', 'dlfile', '$legend_trawler');" },
+                             rel => 'external', -target => 'blank',
+                              title => $legend_trawler },
                               "Trawler raw data" ) ),
                      li( a( { href => $trawler_sorted_file_link,
-                             rel => 'external',
-                              onmouseover => "showfilelegend('$trawler_sorted_file_link', 'dlfile', '$legend_trawler');" },
+                             rel => 'external', -target => 'blank',
+                              title => $legend_trawler },
                               "Trawler sorted data" ) ),
                      li( a( { href => $cluster_file_link,
-                             rel => 'external',
-                              onmouseover => "showfilelegend('$cluster_file_link', 'dlfile', '$legend_cluster');" },
-                              "clustered motifs" ) ),
-                     li( a( { href => $pwm_file_link, rel => 'external', onmouseover => "showfile('$pwm_file_link', 'dlfile');" }, "PWMs" ) ),
-                     li( a( { href => $sample_file, rel => 'external', onmouseover => "showfile('Sample file FASTA format', 'dlfile');"}, "sample FASTA")),
-                     li( a( { href => $background_file, rel => 'external', onmouseover => "showfile('Randomly generated background', 'dlfile');"}, "background FASTA")),
-                   ),
-                   # download file container
-                   div( { class => 'pane hide-first' },
-                     a( { href => '#', class => 'delete' }, "Hide" ),
-                     pre( { id => 'dlfile' } )
-                   )
+                             rel => 'external', -target => 'blank',
+                              title => $legend_cluster },
+                              "Clustered motifs" ) ),
+                     li( a( { href => $pwm_file_link, rel => 'external', -target => 'blank' }, "PWMs" ) ),
+                     li( a( { href => $sample_file, rel => 'external', -target => 'blank' }, "Sample FASTA")),
+                     li( a( { href => $background_file, rel => 'external', -target => 'blank' }, "Background FASTA")),
+                     li( a( { href => $zip, rel => 'external', -target => 'blank' }, "Results archive")),
+                               )
 ); # end download tab HTML
 print FINDEX $download_tab;
 
+
+
 ##### --- Results tab ---
 # Page title
-my $main_tab_title = h1('TRAWLER\'S OVER-REPRESENTED MOTIFS');
+my $main_tab_title = h3('TRAWLER\'S OVER-REPRESENTED MOTIFS');
 # Tooltip text (on table header)
 my $fam_txt = 'Motif family';
 my $pwm_txt = 'Position Weight Matrix';
 my $hit_txt = 'JASPAR (Mathelier et al., 2014), UniPROBE (Hume et al., 2015)';
 my $zsc_txt = 'Over-representation score of this motif compared to its background occurrence';
-my $csc_txt = 'Conservation score of consensus sequence from PhastCon scores';
+my $csc_txt = 'Number of species where the motif is conserved';
 # print THEAD
 my $main_tab_table_thead;
 if ($conservation) {
     $main_tab_table_thead = thead( Tr( th [
-          div( a( { href => "#" }, "Motif"), em($fam_txt) ),
-          div( a( { href => "#" }, "PWM"), em($pwm_txt) ),
-          div( a( { href => "#" }, "Hits against known TFBS databases"), em($hit_txt) ),
-          div( a( { href => "#" }, "Z-score"), em($zsc_txt) ),
-          div( a( { href => "#" }, "Conservation_score"), em($csc_txt) )
+          div( { title => $fam_txt }, "Motif"),
+          div( { title => $pwm_txt }, "PWM"),
+          div( { title => $hit_txt }, "Hits against known TFBS databases"),
+          div( { title => $zsc_txt }, "Z-score"),
+          div( { title => $csc_txt }, "Conservation_score"),
           #'Motif', 'PWM', 'hits against known TFBS databases', 'Z-score', 'Conservation_score'
           ] ) );
 }
 else {
     $main_tab_table_thead = thead( Tr(th [
-          div( a( { href => "#" }, "Motif"), em($fam_txt) ),
-          div( a( { href => "#" }, "PWM"), em($pwm_txt) ),
-          div( a( { href => "#" }, "Hits against known TFBS databases"), em($hit_txt) ),
-          div( a( { href => "#" }, "Z-score"), em($zsc_txt) )
-          #'Motif', 'PWM', 'hits against known TFBS databases', 'Z-score'
+          div( { title => $fam_txt }, "Motif"),
+          div( { title => $pwm_txt }, "PWM"),
+          div( { title => $hit_txt }, "Hits against known TFBS databases"),
+          div( { title => $zsc_txt }, "Z-score")
           ] ) );
 }
 # print TBODY
@@ -679,35 +729,49 @@ for my $k (keys %main_list) {
     $main_tab_table_tbody .= Tr( td( [ @{$main_list{$k}} ] ) );
 }
 # print main DIV
-print FINDEX div( { id => 'trmain', class => CLASS_TAB},
-             $main_tab_title,
-             start_table( { id => 'idx', class => ''.CLASS_SORTER.' '.CLASS_TOOLTIP.'' } ),
+print FINDEX div( { id => 'trmain', class => "tab-pane fade in active"},
+             #$main_tab_title,
+             start_table( { id => 'idx', class => "table table-striped table-hover table-bordered" } ),
              $main_tab_table_thead,
              $main_tab_table_tbody,
              end_table() );
 
 
+
+
 #### --- Family tabs (Ajax mode) ---
 my $family_tabs;
 # NOTE: div ID must match title attribute (container)
-foreach my $family(keys %families) {
-  $family_tabs .= div( { id => $family.'_tab', class => CLASS_TAB }, '' );
+foreach my $family(keys %families) { 
+  $family_tabs .= div( { id => $family, class => "tab-pane fade" }, '' );
+  ## Fill in with the content we used to load from HTML
 }
 print FINDEX $family_tabs;
 
-#### --- Finalize tab container ---
-print FINDEX "</div>"; # container div
+my $family_script = "<script>";
+foreach my $family(keys %families) {
+  $family_script .= '$("#'.$family.'").load("'.$family.'.html", function() {';
+  $family_script .= "\$('#".$family."Tf').DataTable({\"order\": [[ 8, \"asc\" ]], \"lengthMenu\": [[10, 25, 50, -1], [10, 25, 50, \"All\"]]});";
+  $family_script .= "\$('#".$family."Occ').DataTable( {\"lengthMenu\": [[10, 50, 100, -1], [10, 50, 100, \"All\"]]} );"; # {\"order\": [[ 6, \"desc\" ],[ 4, \"desc\" ],[ 0, \"asc\" ]]}
+  $family_script .= '});';
+}
 
-#### --- HTML Footer ---
-print FINDEX div( { id => 'footer' }, "Trawler " . $version);
+$family_script .= "</script>";
+
+print FINDEX $family_script;
+
+#### --- Finalize tab container ---
+print FINDEX "</div></div></div>"; # container div
 
 #### --- Finalize page ---
 print FINDEX "</div>"; # site-contain
+print FINDEX "</div>";
 print FINDEX end_html;
 
 #### --- Close index file ---
 close(FINDEX) or croak "Can't close file '$HTML_INDEX': $!";
 print "html index created\n" if $DEBUG;
+
 
 
 #############################################################
@@ -735,23 +799,6 @@ sub loadFileToHash {
 
 } # end loadFileToHash()
 
-# $family.Occ $family.Tf $family.form
-sub print_family_script {
- my ($family_name) = @_;
- my $tid = $family_name . "Occ";
-
- return <<Script;
-  <script type="text/javascript">
-  // <![CDATA[
-    \$("a[rel*='external']").click(function(){this.target="_blank";});
-    tablefunc("$family_name");
-    \$("#$tid td a").click(function(){runJalview("$family_name", this.title, "jalview_$family_name");});
-    \$(".tooltip a").hover(function(){\$(this).next("em").animate({opacity:"show",top:"-80"},"slow");},
-                           function(){\$(this).next("em").animate({opacity:"hide",top:"-85"},"fast");});
-  // ]]>
-  </script>
-Script
-}
 
 sub input_file_script {
  return <<Script;
@@ -772,9 +819,6 @@ sub createFamilyHTML {
   # FIXME[YH]: remove header declaration
   #print FAMINDEX printHTMLhead();
 
-  # Jalview container
-  print FAMINDEX div( { id => 'jalview_'.$family_name } );
-
   #header
   # FIXME[YH]: relative link to images (images folder)
    #my $image_link = $WORKING_DIR."/".$family_name."_all_motif.png";
@@ -785,7 +829,7 @@ sub createFamilyHTML {
    # create HTML link for these two files
    my $PWMlink = File::Spec->catfile($tcst{HTML_DOWNLOAD}, $PWMFAM);
    my $CLUSTERlink = File::Spec->catfile($tcst{HTML_DOWNLOAD}, $CLUSTFAM);
-   print FAMINDEX table( { class => 'pwm' },
+   print FAMINDEX table( { id => 'pwm', class => 'table center-block pwm'},
           thead(
           #Tr( [
           Tr( th( h2($family_name) ) ),
@@ -794,9 +838,9 @@ sub createFamilyHTML {
             #th([a({-href=>$PWMlink},'Download PWM')])
           ), # end thead
           tbody( Tr( td( img( { -src => $image_link, -alt => $image_link } ) ) ), # PWM logo
-                 Tr( td( a( { href => $PWMlink, rel => 'external' }, 'Download PWM' ) ) ), # PWM file
-                 Tr( td( a( { href => $CLUSTERlink, rel => 'external' }, 'Download instances (motifs)' ) ) ), # motifs file
-                 Tr( td( a( { href => "#", onclick => "showPlot();" }, 'Motifs distribution' ) ) ), # distribution plot
+                 Tr( td( a( { href => $PWMlink, rel => 'external', -target => 'blank' }, 'Download PWM' ) ) ), # PWM file
+                 Tr( td( a( { href => $CLUSTERlink, rel => 'external', -target => 'blank' }, 'Download instances (motifs)' ) ) ), # motifs file
+                 Tr( td( a( { id => "txt-$family_name", href => "#/", onclick => "showPlot_$family_name();" }, 'Show motif distribution' ) ) ), # distribution plot
           ), # end tbody
         );
 
@@ -805,26 +849,26 @@ sub createFamilyHTML {
   print FAMINDEX create_graph_javascript($family_name, @fam_graph)."<br/>";
 
   #database hits Table
-  print FAMINDEX h1('Hits against transcription factor databases');
+  print FAMINDEX h3('Hits against transcription factor databases');
   print FAMINDEX "<br>".$compare_family_name."<br/>";
 
   #sequences and conservation Table
-  print FAMINDEX h1('Occurrences of the motif in the input sequences').br();
+  print FAMINDEX h3('Occurrences of the motif in the input sequences').br();
 
-  print FAMINDEX create_filter_form($family_name)."<br/>";
+  # Print Occ table
   print FAMINDEX $seq_family_name."<br/>";
 
   #print FAMINDEX "</ul><br />";
 
-  print FAMINDEX print_family_script($family_name);
-
   # FIXME[YH]: remove html structure
   # print FAMINDEX end_html;
+  
   close(FAMINDEX) or croak "Can't close file '$FAMHTML_INDEX': $!";
 
   print "html $family_name created\n" if $DEBUG;
 
 }
+
 
 sub create_graph_javascript {
    my ($fname, @fam_graph) = @_;
@@ -833,28 +877,101 @@ sub create_graph_javascript {
    my $data_gr = join ",", @fam_graph;
 
   return <<GraphJS;
-<div id="plot-$fname" style="width:600px;height:300px;display:none;"></div><br />
-<div id="plot-$fname-legend" style="display:none;">Y-axis: number of motifs<br />X-axis: % of sequence length</div>
+<div id="plot-$fname" style="width:600px;height:330px;display:none" class="center-block"></div><br />
+
+
 <script language="javascript" type="text/javascript">
-function showPlot() {
-    var fdata = [$data_gr];
-    \$.plot(\$("#plot-$fname"),[{data:fdata,bars:{show: true}}],{xaxis:{tickFormatter:function(v,axis){return v * 10}}});
-    \$("#plot-$fname").show();
-    \$("#plot-$fname-legend").show();
-}
+var loaded_$fname = false;
+
+
+function showPlot_$fname() {
+    var x = document.getElementById("plot-$fname");
+    var y = document.getElementById("txt-$fname");
+    if (x.style.display === "none") { 
+        x.style.display = "block";
+        y.innerHTML = "Hide motif distribution"
+      } else { 
+        x.style.display = "none";
+        y.innerHTML = "Show motif distribution"
+      }
+    if (loaded_$fname==false) {
+      var fdata = [$data_gr];
+
+      \$.plot(\$("#plot-$fname"),[{
+        color:"#682678",
+        data:fdata,bars:{show: true}}],
+        {xaxis:{
+          tickFormatter:function(v,axis){return v * 10},
+          axisLabel: "Sequence Length (%)",
+          axisLabelUseCanvas: true,
+          axisLabelFontSizePixels: 13,
+          axisLabelFontFamily: "'Helvetica Neue', Helvetica, Arial",
+          axisLabelPadding: 20
+        },yaxis:{
+          axisLabel: "Number of Motifs",
+          axisLabelUseCanvas: true,
+          axisLabelFontSizePixels: 13,
+          axisLabelFontFamily: "'Helvetica Neue', Helvetica, Arial",
+          axisLabelPadding: 15,
+        },grid: {
+        hoverable: true,
+        clickable: true
+        }
+      });
+
+
+       var previousPoint = null, previousLabel = null;
+
+      \$.fn.UseTooltip = function () {
+            \$(this).bind("plothover", function (event, pos, item) {
+                if (item) {
+                    if ((previousLabel != item.series.label) || (previousPoint != item.dataIndex)) {
+                        previousPoint = item.dataIndex;
+                        previousLabel = item.series.label;
+                        \$("#tooltip").remove();
+ 
+                        var x = item.datapoint[0];
+                        var y = item.datapoint[1];
+ 
+                        var color = item.series.color;
+ 
+                        //console.log(item.series.xaxis.ticks[x].label);                
+ 
+                        showTooltip(item.pageX, item.pageY, color, y);
+                    }
+                } else {
+                    \$("#tooltip").remove();
+                    previousPoint = null;
+                }
+            });
+        };
+ 
+        function showTooltip(x, y, color, contents) {
+            \$('<div id="tooltip">' + contents + '</div>').css({
+                position: 'absolute',
+                display: 'none',
+                top: y - 25,
+                left: x + 5,
+                border: '2px solid ' + color,
+                padding: '3px',
+                'font-size': '9px',
+                'border-radius': '5px',
+                'background-color': '#fff',
+                'font-family': 'Verdana, Arial, Helvetica, Tahoma, sans-serif',
+                opacity: 0.9
+            }).appendTo("body").fadeIn(200);
+        }
+
+        \$("#plot-$fname").UseTooltip();
+
+      loaded_$fname = true;
+    }
+};
 </script>
 GraphJS
 }
 
-sub create_filter_form {
-   my ($family_name) = @_;
 
-  return <<FilterForm;
-<form id="$family_name-form">Search:
-  <input name="$family_name-filter" id="$family_name-filter" value="" maxlength="30" size="30" type="text">
-</form><br />
-FilterForm
-}
 
 # Creates the PWM file
 sub createPWMfile {
