@@ -107,10 +107,11 @@ my $phastcon = 0; #display conservation scores from phastcon score
 my $ref_species;
 
 my $phastcon;
+my $masked;
 
 # Motif discovery
 my $occurrence = 10;
-my $mlength = 6;
+my $mlength = 8;
 my $wildcard = 2;
 my $strand = 'double';
 my $class = 'vertebrates'; ###for use with input organism
@@ -155,6 +156,7 @@ GetOptions(
   'wildcard:s'     => \$wildcard,
   'strand:s'       => \$strand,
   'class:s'        => \$class,
+  'masked:s'     => \$masked,
   # Clustering
   'overlap:s'      => \$overlap,
   'motif_number:s' => \$motif_number, # default 200
@@ -194,7 +196,7 @@ if ($version) { trawler_version(); }
 # start Running Trawler
 msg_config();
 
-# if no sample and background, then usage
+#if no sample and background, then usage
 unless(($sample && $background) or ($sample && $org)) {
     print "\nERROR: must specify a sample and organism with -sample and -org for bed input 
     OR specify a sample and background with -sample and -background for FASTA input\n";
@@ -224,10 +226,10 @@ unless($directory) {
 my $tmp_dir_name;
 if ($dir_id) {
   # <id>_<localetime>/
-  $tmp_dir_name = $dir_id . "_" . _get_tstamp(); # get timestamp to create resut dir
+  $tmp_dir_name = $dir_id;#. "_" . _get_tstamp(); # get timestamp to create resut dir
 } else {
   # tmp_<localetime>/
-  $tmp_dir_name = $tcst{RES_DIR_PREFIX} . _get_tstamp(); # get timestamp to create resut dir
+  $tmp_dir_name = $tcst{RES_DIR_PREFIX};#. _get_tstamp(); # get timestamp to create resut dir
 }
     # default tmp store directory is like $TRAWLER_HOME/tmp_YYYY-MM-DD_HHhmm:ss
     $directory = File::Spec->catfile($directory, $tmp_dir_name);
@@ -262,22 +264,24 @@ if ($sample && $org){
     ###generate fasta from bed and random background data
     my $pid = fork;
     if (!defined $pid) {
-        die "Cannot fork: $!";
+  die "Cannot fork: $!";
     } elsif ($pid == 0) {
-        system("sort -k1,1 -k2,2n ".$sample." | bedtools merge > ".$tmp_sample);
-        system("perl ".$tcst{bedtofasta}." ".$tmp_sample." ".$org." -output ".$html_download_dir."/sample.fa");
-        exit 0;
+      system("sort -k1,1 -k2,2n ".$sample." | bedtools merge > ".$tmp_sample);
+      system("perl ".$tcst{bedtofasta}." ".$tmp_sample." ".$org." -output ".$html_download_dir."/sample.fa -masked ".$masked." 2>/dev/null");
+      exit 0;
     } else {
-        system("perl ".$tcst{generate_background}." ".$tmp_sample." ".$org." -output ".$tmp_bg);
-        system("sort -k1,1 -k2,2n ".$tmp_bg." | bedtools merge > ".$html_download_dir."/rand_bg.bed");
-        system("perl ".$tcst{bedtofasta}." ".$html_download_dir."/rand_bg.bed ".$org." -output ".$html_download_dir."/rand_bg.fa");
-        waitpid $pid, 0;
+      system("perl ".$tcst{generate_background}." ".$tmp_sample." ".$org." -output ".$tmp_bg);
+      system("sort -k1,1 -k2,2n ".$tmp_bg." | bedtools merge > ".$html_download_dir."/rand_bg.bed");
+      system("perl ".$tcst{bedtofasta}." ".$html_download_dir."/rand_bg.bed ".$org." -output ".$html_download_dir."/rand_bg.fa -masked ".$masked." 2>/dev/null");
+      waitpid $pid, 0;
     }
-    
+
     ###set files to run in trawler
     $background = $tcst{RAND_BG};
     $sample = $tcst{SAMPLE_FILE};
+    die "cannot generate background file\n\n" if (-z $background);
 }
+
 # double strand
 if ($strand eq 'double') {
 
@@ -330,8 +334,7 @@ elsif ($alignments && $clustering == 1 && $web == 1 && $phastcon == 0) { # then 
 elsif ($clustering == 1 && $web == 1 && $phastcon == 1) { # then the first schema needs to be run.
     my $c = "perl \"" . $tcst{pipeline_trawler_01_som} . "\" -sample \"$sample\" -background \"$background\" -k $k -overlap $overlap -seqlogo $seqlogo -directory \"$directory\" -xtralen $xtralen -avoid $avoid -mlength $mlength -motif_number $motif_number -low_content $low_content -occurrence $occurrence -wildcard $wildcard -treg_threshold $treg_threshold -nb_of_cluster $nb_of_cluster -class $class";
     my $c1 = "perl \"" . $tcst{pipeline_trawler_02_phastcons} . "\" -directory \"$directory\" -sequences \"$sample\" -motif \"$file_motif\" -org \"$org\"";
-    my $c2 = "perl \"" . $tcst{pipeline_trawler_03} . "\" -directory \"$directory\" -conservation 1";
-#    my $c2 = "perl \"" . $tcst{pipeline_trawler_03} . "\" -directory \"$directory\"";
+    my $c2 = "perl \"" . $tcst{pipeline_trawler_03} . "\" -directory \"$directory\" -conservation 1 -org \"$org\"";
 #    print "LOG[INFO]: trawler will be run and the output will be stored in $directory\n the commands are :\n $c\n AND\n $c1\n AND\n $c2\n" if $INFO;
     $timer_stack .= "trawler.pl => " . $timer->interval() . "\n";
     
@@ -481,6 +484,10 @@ else {
 
 create_input_file($input_file);
 
+###Zip files
+chdir("/mnt/public_html/");
+my $session = basename($directory);
+system("zip -r ".$directory."/downloads/".$session.".zip ".$session." 1>/dev/null");
 
 #==============================================================================
 # Subroutines
@@ -499,37 +506,23 @@ sub create_output_arch {
   # TODO[YH]: Refactor with prepare_html_output
   # TODO[YH]: use constants for file/dir naming
   # create HTML output directories
-  my $html_css_dir = File::Spec->catdir( $directory, $tcst{HTML_CSS} );
+  my $html_bs_dir = File::Spec->catdir( $directory, $tcst{HTML_BS} );
   my $html_download_dir = File::Spec->catdir( $directory, $tcst{HTML_DOWNLOAD} );
   my $html_imgs_dir = File::Spec->catdir( $directory, $tcst{HTML_IMG} );
-  my $html_js_dir = File::Spec->catdir( $directory, $tcst{HTML_JS} );
-  my $html_lib_dir = File::Spec->catdir( $directory, $tcst{HTML_LIB} );
   my $html_input_dir = File::Spec->catdir( $directory, $tcst{HTML_INPUT} );
-  eval { mkpath( [ $html_css_dir, $html_js_dir, $html_imgs_dir, $html_download_dir, $html_lib_dir, $html_input_dir ] ) };
+  eval { mkpath( [ $html_bs_dir,$html_imgs_dir, $html_download_dir, $html_input_dir ] ) };
   if ($@) {
     print STDERR "Cannot create HTML ouput directories: $@";
     exit(1);
   }
 
-  # TODO[YH]: get arrays from Config (hash: key=>srcDir, value=>file array)
-  # copy JS files
-  my @js_files = ('base.js', 'excanvas.js');
-  foreach (@js_files) {
-    copy( File::Spec->catfile( ($tcst{BASE_PATH}, "jsscripts"), $_),
-        File::Spec->catfile( $html_js_dir, $_) )
-        or die "Copy failed: $!";
-  }
   # copy CSS files
-  my @css_files = ('style.css', 'asc.gif', 'bg.gif', 'desc.gif', 'loading.gif', 'tab.png', 'hover.png');
-  foreach (@css_files) {
-    copy( File::Spec->catfile( ($tcst{BASE_PATH}, "css"), $_),
-          File::Spec->catfile( $html_css_dir, $_) )
+  my @bs_files = ('bootstrap.min.css', 'bootstrap.min.js', 'dataTables.bootstrap.min.js', 'favicon.ico', 'jquery.dataTables.min.css', 'jquery.dataTables.min.js', 'jquery.flot.axislabels.js', 'jquery.flot.min.js', 'jquery.min.js', 'jumbotron.css', 'logoARMI-MONASH.png', 'sort_asc_disabled.png', 'sort_asc.png', 'sort_both.png', 'sort_desc_disabled.png', 'sort_desc.png', 'zfish_og.png');
+  foreach (@bs_files) {
+    copy( File::Spec->catfile( ($tcst{BASE_PATH}, "bs"), $_),
+          File::Spec->catfile( $html_bs_dir, $_) )
           or die "Copy failed: $!";
   }
-  # copy LIB files
-  copy( File::Spec->catfile( ($tcst{BASE_PATH}, "lib"), "jalviewApplet.jar"),
-        File::Spec->catfile( $html_lib_dir, "jalviewApplet.jar") )
-        or die "Copy failed: $!";
 
   # copy README file
   copy( File::Spec->catfile( $tcst{BASE_PATH}, $tcst{README_FILE} ),
@@ -659,14 +652,15 @@ sub create_input_sum {
 
 
 sub msg_output {
+  my $session = basename($directory);
   my $msg_res = <<"OUTPUT";
 ## Job's done !
   ==========
 $timer_stack
   ----------
-  Output files have been stored in $directory
-  Open the index.html file in your web browser.
-  FASTA files and generated background can be found in $directory/$tcst{HTML_DOWNLOAD}
+  Your JobID is $session
+  Output files have been stored in /public_html/$session
+  FASTA files and generated background can be found in $session/$tcst{HTML_DOWNLOAD}
   ==========
 OUTPUT
 
