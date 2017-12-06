@@ -226,10 +226,10 @@ unless($directory) {
 my $tmp_dir_name;
 if ($dir_id) {
   # <id>_<localetime>/
-  $tmp_dir_name = $dir_id;#. "_" . _get_tstamp(); # get timestamp to create resut dir
+  $tmp_dir_name = $dir_id. "_" . _get_tstamp(); # get timestamp to create resut dir
 } else {
   # tmp_<localetime>/
-  $tmp_dir_name = $tcst{RES_DIR_PREFIX};#. _get_tstamp(); # get timestamp to create resut dir
+  $tmp_dir_name = $tcst{RES_DIR_PREFIX}. _get_tstamp(); # get timestamp to create resut dir
 }
     # default tmp store directory is like $TRAWLER_HOME/tmp_YYYY-MM-DD_HHhmm:ss
     $directory = File::Spec->catfile($directory, $tmp_dir_name);
@@ -658,8 +658,8 @@ sub msg_output {
   ==========
 $timer_stack
   ----------
-  Your JobID is $session
-  Output files have been stored in /public_html/$session
+  Your JobID is $dir_id
+  Output files have been stored in $directory
   FASTA files and generated background can be found in $session/$tcst{HTML_DOWNLOAD}
   ==========
 OUTPUT

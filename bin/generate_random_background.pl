@@ -165,7 +165,7 @@ print "$_ $distribution{$_}\n" for ( sort {$a <=> $b} keys %distribution);
 
 if (sum(@length_array) > 20000000) {
     my $size = sum(@length_array);
-    $factor = int(160000000/$size);
+    my $factor = int(160000000/$size);
     if ($factor < 5) {
         die "sample is too big to generate background\n\n";
     }
